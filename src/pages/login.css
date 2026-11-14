@@ -1,0 +1,442 @@
+/* ============ LegalCase Login — Modern Legal SaaS ============ */
+.login-page {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 560px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  background: #f6f8fb;
+  color: #0f172a;
+  overflow: hidden;
+}
+
+/* ---------- Left brand panel ---------- */
+.login-brand {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(24px, 4vh, 48px) clamp(28px, 4vw, 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(14px, 2.5vh, 26px);
+  color: #ffffff;
+  background: linear-gradient(155deg, #090d16 0%, #0f172a 45%, #1e293b 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lb-circle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.lb-circle.c1 {
+  width: 44vh;
+  height: 44vh;
+  right: -12vh;
+  top: -12vh;
+  background: radial-gradient(circle, rgba(180, 83, 9, 0.18), transparent 70%);
+}
+.lb-circle.c2 {
+  width: 36vh;
+  height: 36vh;
+  left: -14vh;
+  bottom: -14vh;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.lb-circle.c3 {
+  width: 18vh;
+  height: 18vh;
+  right: 12%;
+  bottom: 20%;
+  border: 1px dashed rgba(245, 158, 11, 0.15);
+}
+
+.brand-logo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-logo-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: #f59e0b;
+  background: #0f172a;
+  border: 1px solid #334155;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.brand-logo h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+.brand-logo p {
+  margin: 1px 0 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+  letter-spacing: 0.2px;
+}
+
+.brand-hero {
+  position: relative;
+}
+.brand-hero h2 {
+  font-weight: 700;
+  line-height: 1.25;
+  color: #f8fafc;
+  font-size: clamp(22px, min(2.5vw, 4vh), 36px);
+  margin: 0 0 clamp(12px, 2vh, 18px);
+  max-width: 580px;
+  letter-spacing: -0.4px;
+}
+.brand-hero h2 span {
+  color: #f59e0b;
+}
+
+/* Refined Advocate Chambers Badge */
+.brand-office {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+.brand-office strong {
+  font-size: 12.5px;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+}
+.brand-office small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.brand-stats {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 540px;
+}
+.bs-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.bs-card b {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.bs-card small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+.bs-rose  { border-left: 3px solid #f43f5e; }
+.bs-teal  { border-left: 3px solid #14b8a6; }
+.bs-amber { border-left: 3px solid #f59e0b; }
+
+.brand-features {
+  position: relative;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.brand-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+.brand-features li span {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f59e0b;
+}
+
+.brand-foot {
+  position: relative;
+  margin: 0;
+  font-size: 11.5px;
+  color: #64748b;
+}
+.brand-foot strong {
+  color: #94a3b8;
+}
+
+/* ---------- Right form panel ---------- */
+.login-panel {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 3vh, 36px) clamp(20px, 3.5vw, 56px);
+  background: #f8fafc;
+}
+.mobile-logo {
+  display: none;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: clamp(20px, 3vh, 32px) clamp(20px, 2.4vw, 32px);
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: cardFade 0.3s ease both;
+}
+
+@keyframes cardFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-card-head {
+  text-align: center;
+}
+.login-card-head .shield {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 8px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+.login-card-head h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+.login-card-head p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.field-label {
+  font-size: 12px;
+  color: #334155;
+  font-weight: 600;
+}
+.field-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  height: 38px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+.field-box:focus-within {
+  border-color: #b45309;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.12);
+  color: #0f172a;
+}
+.field-box input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #0f172a;
+  font-size: 13px;
+  font-family: inherit;
+}
+.field-box input::placeholder {
+  color: #94a3b8;
+}
+.eye {
+  background: none;
+  border: 0;
+  color: #94a3b8;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 2px;
+}
+.eye:hover {
+  color: #0f172a;
+}
+
+.login-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  cursor: pointer;
+}
+.remember input {
+  accent-color: #b45309;
+  width: 14px;
+  height: 14px;
+}
+.link-btn {
+  background: none;
+  border: 0;
+  color: #b45309;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.login-error {
+  padding: 8px 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.login-submit {
+  height: 38px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+  transition: all 0.15s ease;
+  display: grid;
+  place-items: center;
+}
+.login-submit:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+}
+.login-submit:disabled {
+  opacity: 0.8;
+  cursor: wait;
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.demo-hint {
+  background: #fffbeb;
+  border: 1px dashed #fde68a;
+  border-radius: 6px;
+  color: #78350f;
+  font-size: 11.5px;
+  padding: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+}
+.demo-hint b {
+  color: #b45309;
+}
+.demo-hint span {
+  color: #92400e;
+}
+.demo-hint:hover {
+  border-color: #b45309;
+  background: #fef3c7;
+}
+
+.login-copy {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+  .login-brand {
+    display: none;
+  }
+  .mobile-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 8px;
+  }
+  .mobile-logo h1 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+  }
+  .mobile-logo p {
+    margin: 1px 0 0;
+    font-size: 11px;
+    color: #64748b;
+  }
+}
