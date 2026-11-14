@@ -861,3 +861,35 @@
     justify-content: center;
   }
 }
+
+/* =====================================================================
+   RESPONSIVE PATCH — Client / Case management
+   ===================================================================== */
+
+/* Table: columns dabne ki jagah andar horizontal scroll */
+@media (max-width: 1280px) {
+  .mgmt-table th, .mgmt-table td { white-space: nowrap; }
+  .mgmt-table td .client-name-cell, .mgmt-table td .muted-subtext { white-space: nowrap; }
+}
+
+@media (max-width: 900px) {
+  .mgmt-header { flex-wrap: wrap; gap: 12px; }
+  .mgmt-header-left { min-width: 0; flex: 1 1 320px; }
+  .mgmt-header-actions { flex-wrap: wrap; }
+  .table-scroll-container { -webkit-overflow-scrolling: touch; }
+  .mgmt-table { min-width: 680px; }
+}
+
+@media (max-width: 600px) {
+  .mgmt-tag-row { flex-wrap: wrap; row-gap: 4px; }
+  .mgmt-header-left { align-items: flex-start; flex: none; width: 100%; }
+  .mgmt-header-actions button { flex: 1 1 150px; min-width: 0; }
+  .mgmt-header-actions button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mgmt-title { font-size: 18px; }
+  .table-scroll-container { max-height: 420px; }
+}
+
+@media (max-width: 380px) {
+  .mgmt-btn-bar { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mgmt-icon-badge { display: none; }
+}

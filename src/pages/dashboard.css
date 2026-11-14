@@ -1677,3 +1677,80 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =====================================================================
+   RESPONSIVE PATCH — sirf layout fixes, desktop design same hai
+   ===================================================================== */
+
+/* Topbar: mid screens pe search hide (badge dab raha tha) */
+@media (max-width: 1200px) {
+  .tb-search { display: none; }
+}
+
+/* Tablet + mobile: topbar 2 rows — brand & actions upar, advocate badge neeche full width */
+@media (max-width: 900px) {
+  .tb-left { display: contents; }
+  .tb-brand { order: 1; }
+  .tb-right { order: 2; margin-left: auto; gap: 8px; }
+  .tb-office-badge { order: 3; flex-basis: 100%; width: 100%; max-width: 100%; min-width: 0; }
+  .tb-office-row, .tb-office-loc { min-width: 0; }
+  .tb-office-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Side rail -> bottom navigation bar (same buttons, same links) */
+  .rail {
+    display: flex;
+    position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+    width: 100%; height: auto;
+    flex-direction: row; justify-content: center;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-right: 0; border-top: 1.5px solid #e2e8f0;
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+    z-index: 60;
+  }
+  .rail-top { flex-direction: row; width: 100%; }
+  .rail-brand-icon, .rail-sep, .rail-bottom { display: none; }
+  .rail-nav { flex-direction: row; justify-content: space-around; gap: 4px; }
+  .rail-btn {
+    flex: 1; max-width: 96px; width: auto; height: 48px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  }
+  .rail-tip {
+    position: static; transform: none; opacity: 1;
+    background: none; color: inherit; box-shadow: none;
+    padding: 0; font-size: 10px; font-weight: 600;
+  }
+  .rail ~ .app-main { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  .rail ~ .app-main .dash-foot { padding-bottom: 4px; }
+}
+
+/* Tablet (601–900): space ka sahi use — 1 column ki jagah 2/3 columns */
+@media (min-width: 601px) and (max-width: 900px) {
+  .stats-grid, .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .master-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .data-grid, .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reports-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .dash-head { flex-direction: column; align-items: stretch; gap: 10px; }
+  .dash-head-actions { width: 100%; flex-wrap: wrap; }
+  .dash-head-actions button { flex: 1 1 140px; justify-content: center; }
+  .panel-head { flex-wrap: wrap; gap: 8px; }
+  .panel-head-left { min-width: 0; flex: 1 1 200px; }
+  .panel-badge { white-space: nowrap; }
+  .master-card, .data-card, .report-row { min-width: 0; }
+  .mc-body, .dc-body, .rr-body { min-width: 0; }
+  .stats-grid, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat-card { min-width: 0; }
+  .stat-value { font-size: 17px; white-space: nowrap; }
+  .stat-label { font-size: 10px; letter-spacing: .3px; }
+  .crumbs { flex-wrap: wrap; row-gap: 4px; }
+  .me-details-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 380px) {
+  .stat-value { font-size: 15px; }
+  .rr-num { display: none; }
+  .rail-tip { font-size: 9px; }
+}
