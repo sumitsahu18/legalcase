@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import {
   Users, UserPlus, Save, RefreshCw, Printer, XCircle, Search,
   Phone, MapPin, Calendar, IndianRupee, ArrowLeft, CheckCircle2,
-  AlertCircle, ChevronRight, UserCheck
+  AlertCircle, ChevronRight, UserCheck, Trash2, Eye,
+  ShieldAlert
 } from 'lucide-react'
 import Topbar from '../components/Topbar.jsx'
 import { OFFICE } from '../data/menu.js'
-import { getClients, saveClient, updateClient, onStorageUpdate } from '../services/storageService.js'
+import {
+  getClients, saveClient, updateClient, deleteClient,
+  checkDuplicateClient, getClientHistory, onStorageUpdate
+} from '../services/storageService.js'
 import './management.css'
 
 export default function ClientManagement() {
@@ -17,6 +21,10 @@ export default function ClientManagement() {
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [clientToDelete, setClientToDelete] = useState(null)
+  const [historyModalClient, setHistoryModalClient] = useState(null)
+  const [duplicateWarning, setDuplicateWarning] = useState(null)
 
   // Form State
   const getInitialForm = () => ({
@@ -24,11 +32,18 @@ export default function ClientManagement() {
     relation: '',
     address: '',
     phone: '',
+    extraPhone: '',
     referenceName: '',
     referencePhone: '',
+    clientCategory: 'Civil',
+    casePosition: 'Petitioner / Plaintiff',
+    urgency: 'Normal',
+    feeAgreement: 'Lump Sum Agreed',
     fees: '',
     date: new Date().toISOString().split('T')[0],
+    notes: '',
   })
+
   const [formData, setFormData] = useState(getInitialForm)
   const [errors, setErrors] = useState({})
 
@@ -39,7 +54,7 @@ export default function ClientManagement() {
     })
   }, [])
 
-  // Auto-dismiss toast after 3 seconds
+  // Auto-dismiss toast
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 3500)
@@ -58,6 +73,9 @@ export default function ClientManagement() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }))
     }
+    if (duplicateWarning) {
+      setDuplicateWarning(null)
+    }
   }
 
   // Validation
@@ -65,14 +83,17 @@ export default function ClientManagement() {
     const errs = {}
     if (!formData.name.trim()) errs.name = 'Client Name is required'
     if (!formData.phone.trim()) {
-      errs.phone = 'Phone number is required'
+      errs.phone = 'Mobile phone number is required'
     } else if (!/^\d{10}$/.test(formData.phone.replace(/[\s-+]/g, ''))) {
-      errs.phone = 'Enter valid 10-digit mobile number'
+      errs.phone = 'Enter a valid 10-digit mobile number'
+    }
+    if (formData.extraPhone && !/^\d{10}$/.test(formData.extraPhone.replace(/[\s-+]/g, ''))) {
+      errs.extraPhone = 'Enter valid 10-digit extra phone'
     }
     if (formData.referencePhone && !/^\d{10}$/.test(formData.referencePhone.replace(/[\s-+]/g, ''))) {
-      errs.referencePhone = 'Enter valid 10-digit phone'
+      errs.referencePhone = 'Enter valid 10-digit reference phone'
     }
-    if (!formData.date) errs.date = 'Date is required'
+    if (!formData.date) errs.date = 'Registration date is required'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -85,20 +106,28 @@ export default function ClientManagement() {
       relation: client.relation || '',
       address: client.address || '',
       phone: client.phone || '',
+      extraPhone: client.extraPhone || '',
       referenceName: client.referenceName || '',
       referencePhone: client.referencePhone || '',
+      clientCategory: client.clientCategory || 'Civil',
+      casePosition: client.casePosition || 'Petitioner / Plaintiff',
+      urgency: client.urgency || 'Normal',
+      feeAgreement: client.feeAgreement || 'Lump Sum Agreed',
       fees: client.fees !== undefined ? String(client.fees) : '',
       date: client.date || new Date().toISOString().split('T')[0],
+      notes: client.notes || '',
     })
     setErrors({})
+    setDuplicateWarning(null)
     showToast('info', `Selected client ${client.id} — loaded into form`)
   }
 
-  // Clear Form for New Client Entry
+  // Clear Form
   const handleClear = () => {
     setSelectedId(null)
     setFormData(getInitialForm())
     setErrors({})
+    setDuplicateWarning(null)
   }
 
   // Save New Client
@@ -109,18 +138,30 @@ export default function ClientManagement() {
       return
     }
 
+    // Check for accidental duplicate record
+    const dup = checkDuplicateClient(formData.phone, formData.name)
+    if (dup && !duplicateWarning) {
+      setDuplicateWarning({
+        existing: dup,
+        reason: dup.phone === formData.phone.trim() ? `Phone number (${formData.phone}) is already registered with ${dup.id} (${dup.name}).` : `Client name matches existing record ${dup.id}.`,
+      })
+      showToast('error', 'Potential duplicate client detected! Please verify below.')
+      return
+    }
+
     setLoading(true)
     setTimeout(() => {
       try {
         const saved = saveClient(formData)
         setSelectedId(saved.id)
+        setDuplicateWarning(null)
         showToast('success', `Client ${saved.name} registered successfully with ID ${saved.id}!`)
       } catch (err) {
         showToast('error', err.message || 'Failed to save client.')
       } finally {
         setLoading(false)
       }
-    }, 150)
+    }, 120)
   }
 
   // Update Existing Client
@@ -135,17 +176,57 @@ export default function ClientManagement() {
       return
     }
 
+    // Check for duplicate excluding current client
+    const dup = checkDuplicateClient(formData.phone, formData.name, selectedId)
+    if (dup && !duplicateWarning) {
+      setDuplicateWarning({
+        existing: dup,
+        reason: `Phone (${formData.phone}) is used by another record ${dup.id} (${dup.name}).`,
+      })
+      showToast('error', 'Phone number conflicts with another client record!')
+      return
+    }
+
     setLoading(true)
     setTimeout(() => {
       try {
         const updated = updateClient(selectedId, formData)
+        setDuplicateWarning(null)
         showToast('success', `Client ${updated.id} (${updated.name}) updated successfully!`)
       } catch (err) {
         showToast('error', err.message || 'Failed to update client.')
       } finally {
         setLoading(false)
       }
-    }, 150)
+    }, 120)
+  }
+
+  // Delete Client with Confirmation
+  const promptDeleteClient = (client) => {
+    setClientToDelete(client)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteClient = () => {
+    if (!clientToDelete) return
+    try {
+      deleteClient(clientToDelete.id)
+      if (selectedId === clientToDelete.id) {
+        handleClear()
+      }
+      showToast('success', `Client ${clientToDelete.id} (${clientToDelete.name}) deleted.`)
+    } catch (err) {
+      showToast('error', err.message || 'Failed to delete client.')
+    } finally {
+      setShowDeleteModal(false)
+      setClientToDelete(null)
+    }
+  }
+
+  // View Client History (Cases & Payments)
+  const handleOpenHistory = (client) => {
+    const history = getClientHistory(client.id)
+    setHistoryModalClient(history)
   }
 
   // Print Selected Client Docket
@@ -164,8 +245,10 @@ export default function ClientManagement() {
       (c.id && c.id.toLowerCase().includes(q)) ||
       (c.name && c.name.toLowerCase().includes(q)) ||
       (c.phone && c.phone.includes(q)) ||
+      (c.extraPhone && c.extraPhone.includes(q)) ||
       (c.relation && c.relation.toLowerCase().includes(q)) ||
-      (c.address && c.address.toLowerCase().includes(q))
+      (c.address && c.address.toLowerCase().includes(q)) ||
+      (c.clientCategory && c.clientCategory.toLowerCase().includes(q))
     )
   })
 
@@ -186,10 +269,10 @@ export default function ClientManagement() {
             <ChevronRight size={12} className="crumbs-sep" />
             <span className="crumbs-muted">Master Entry</span>
             <ChevronRight size={12} className="crumbs-sep" />
-            <b className="crumbs-active">Client Master &amp; Registration</b>
+            <b className="crumbs-active">Client Master (Registration &amp; Records)</b>
           </div>
 
-          {/* Page Sub-header */}
+          {/* Page Header */}
           <div className="mgmt-header">
             <div className="mgmt-header-left">
               <span className="mgmt-icon-badge client-badge">
@@ -197,17 +280,17 @@ export default function ClientManagement() {
               </span>
               <div>
                 <div className="mgmt-tag-row">
-                  <span className="tag-blue">Client Registration Module</span>
+                  <span className="tag-blue">Client Master Module</span>
                   <span className="tag-muted">{clients.length} Registered Clients</span>
                 </div>
-                <h1 className="mgmt-title">Client Management System</h1>
-                <p className="mgmt-desc">Register new clients, edit profiles, maintain fee accounts &amp; generate official dockets</p>
+                <h1 className="mgmt-title">Client Master Management</h1>
+                <p className="mgmt-desc">Register clients, configure legal categories, inspect case histories &amp; print dockets</p>
               </div>
             </div>
             <div className="mgmt-header-actions">
               <button className="btn-secondary" onClick={() => navigate('/dashboard')}>
                 <ArrowLeft size={14} />
-                <span>Dashboard Overview</span>
+                <span>Dashboard</span>
               </button>
               <button className="btn-primary" onClick={handleClear}>
                 <UserPlus size={14} />
@@ -226,6 +309,42 @@ export default function ClientManagement() {
             </div>
           )}
 
+          {/* Accidental Duplicate Alert Banner */}
+          {duplicateWarning && (
+            <div className="alert-card-warning" style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ShieldAlert size={20} color="#d97706" />
+                <div>
+                  <strong style={{ color: '#92400e', fontSize: '13px' }}>Duplicate Client Warning:</strong>
+                  <span style={{ color: '#b45309', fontSize: '13px', marginLeft: '6px' }}>{duplicateWarning.reason}</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: '12px' }}
+                  onClick={() => handleSelectClient(duplicateWarning.existing)}
+                >
+                  Load Existing {duplicateWarning.existing.id}
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{ padding: '4px 10px', fontSize: '12px', background: '#d97706', borderColor: '#b45309' }}
+                  onClick={() => {
+                    const saved = saveClient(formData)
+                    setSelectedId(saved.id)
+                    setDuplicateWarning(null)
+                    showToast('success', `Saved client ${saved.id} with duplicate acknowledgment.`)
+                  }}
+                >
+                  Save Anyway (Different Person)
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Two-Panel Layout */}
           <div className="mgmt-two-panel">
             {/* ================= LEFT PANEL: CLIENT FORM ================= */}
@@ -233,17 +352,17 @@ export default function ClientManagement() {
               <div className="panel-card-head">
                 <div className="pch-title">
                   <span className="pch-dot pch-blue" />
-                  <h3>{selectedId ? `Edit Client (${selectedId})` : 'New Client Registration'}</h3>
+                  <h3>{selectedId ? `Edit Client (${selectedId})` : 'New Client Registration Form'}</h3>
                 </div>
                 {selectedId ? (
-                  <span className="status-badge editing">Editing Mode</span>
+                  <span className="status-badge editing">Editing Record</span>
                 ) : (
-                  <span className="status-badge creating">New Entry</span>
+                  <span className="status-badge creating">New Registration</span>
                 )}
               </div>
 
               <form className="mgmt-form" onSubmit={(e) => e.preventDefault()}>
-                {/* Row 1: Client ID indicator & Date */}
+                {/* Row 1: Client ID & Registration Date */}
                 <div className="form-row-2">
                   <div className="form-field">
                     <label className="field-lbl">Client ID</label>
@@ -272,7 +391,7 @@ export default function ClientManagement() {
 
                 {/* Row 2: Client Name */}
                 <div className="form-field">
-                  <label className="field-lbl">Client Name <span className="req">*</span></label>
+                  <label className="field-lbl">Client Full Name <span className="req">*</span></label>
                   <input
                     type="text"
                     name="name"
@@ -298,10 +417,10 @@ export default function ClientManagement() {
                   />
                 </div>
 
-                {/* Row 4: Phone & Case/Other Fees */}
+                {/* Row 4: Mobile Number & Extra Phone Number */}
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="field-lbl">Phone Number <span className="req">*</span></label>
+                    <label className="field-lbl">Mobile Number <span className="req">*</span></label>
                     <div className="input-with-icon">
                       <Phone size={14} className="input-ic" />
                       <input
@@ -318,17 +437,101 @@ export default function ClientManagement() {
                   </div>
 
                   <div className="form-field">
-                    <label className="field-lbl">Case / Other Fees (₹)</label>
+                    <label className="field-lbl">Extra Phone Number</label>
                     <div className="input-with-icon">
-                      <IndianRupee size={14} className="input-ic" />
+                      <Phone size={14} className="input-ic" />
                       <input
-                        type="number"
-                        name="fees"
-                        placeholder="Agreed consultation fees"
-                        className="form-input"
-                        value={formData.fees}
+                        type="tel"
+                        name="extraPhone"
+                        placeholder="Alternate phone / WhatsApp"
+                        maxLength={10}
+                        className={`form-input ${errors.extraPhone ? 'input-err' : ''}`}
+                        value={formData.extraPhone}
                         onChange={handleChange}
                       />
+                    </div>
+                    {errors.extraPhone && <span className="err-msg">{errors.extraPhone}</span>}
+                  </div>
+                </div>
+
+                {/* ================= FOUR CLIENT ENTRY OPTIONS / FIELDS ================= */}
+                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#475569', marginBottom: '8px' }}>
+                    Client Classification &amp; Engagement Options
+                  </div>
+
+                  <div className="form-row-2">
+                    {/* Option 1: Client Category */}
+                    <div className="form-field">
+                      <label className="field-lbl">1. Client Category / Branch</label>
+                      <select
+                        name="clientCategory"
+                        className="form-input form-select"
+                        value={formData.clientCategory}
+                        onChange={handleChange}
+                      >
+                        <option value="Civil">Civil Litigation</option>
+                        <option value="Criminal">Criminal Defense / Bail</option>
+                        <option value="Revenue">Revenue &amp; Land Laws</option>
+                        <option value="Family / Matrimonial">Family / Matrimonial</option>
+                        <option value="Corporate">Corporate &amp; Commercial</option>
+                        <option value="Writ / Constitutional">High Court Writ</option>
+                        <option value="Consumer / Labor">Consumer / Labor Dispute</option>
+                        <option value="Other">Other Legal Matter</option>
+                      </select>
+                    </div>
+
+                    {/* Option 2: Case Nature / Position */}
+                    <div className="form-field">
+                      <label className="field-lbl">2. Legal Position / Role</label>
+                      <select
+                        name="casePosition"
+                        className="form-input form-select"
+                        value={formData.casePosition}
+                        onChange={handleChange}
+                      >
+                        <option value="Petitioner / Plaintiff">Petitioner / Plaintiff</option>
+                        <option value="Respondent / Defendant">Respondent / Defendant</option>
+                        <option value="Appellant">Appellant</option>
+                        <option value="Complainant / Informant">Complainant / Informant</option>
+                        <option value="Accused / Bail">Accused / Bail Deponent</option>
+                        <option value="Caveator">Caveator</option>
+                        <option value="Third Party / Intervenor">Third Party / Intervenor</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row-2" style={{ marginTop: '8px' }}>
+                    {/* Option 3: Priority / Urgency */}
+                    <div className="form-field">
+                      <label className="field-lbl">3. Matter Priority / Urgency</label>
+                      <select
+                        name="urgency"
+                        className="form-input form-select"
+                        value={formData.urgency}
+                        onChange={handleChange}
+                      >
+                        <option value="Normal">Normal Regular Matter</option>
+                        <option value="Urgent">Urgent Hearing / Moving</option>
+                        <option value="Stay / Bail Urgent">Stay / Injunction / Bail Urgent</option>
+                        <option value="Critical">Critical Limitation Date</option>
+                      </select>
+                    </div>
+
+                    {/* Option 4: Fee Agreement Model */}
+                    <div className="form-field">
+                      <label className="field-lbl">4. Fee Agreement Type</label>
+                      <select
+                        name="feeAgreement"
+                        className="form-input form-select"
+                        value={formData.feeAgreement}
+                        onChange={handleChange}
+                      >
+                        <option value="Lump Sum Agreed">Lump Sum Agreed Contract</option>
+                        <option value="Stage-wise Retainer">Stage-wise Retainer</option>
+                        <option value="Per Appearance">Per Appearance / Hearing</option>
+                        <option value="Pro-bono / Legal Aid">Pro-bono / Legal Aid</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -340,7 +543,7 @@ export default function ClientManagement() {
                     <input
                       type="text"
                       name="referenceName"
-                      placeholder="Referred by (advocate, village pradhan, etc.)"
+                      placeholder="Referred by (advocate, pradhan, doctor)"
                       className="form-input"
                       value={formData.referenceName}
                       onChange={handleChange}
@@ -364,7 +567,36 @@ export default function ClientManagement() {
                   </div>
                 </div>
 
-                {/* Row 6: Address */}
+                {/* Row 6: Agreed Fees & Notes */}
+                <div className="form-row-2">
+                  <div className="form-field">
+                    <label className="field-lbl">Agreed Retainer Fees (₹)</label>
+                    <div className="input-with-icon">
+                      <IndianRupee size={14} className="input-ic" />
+                      <input
+                        type="number"
+                        name="fees"
+                        placeholder="Agreed consultation fees"
+                        className="form-input"
+                        value={formData.fees}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label className="field-lbl">Client Remarks / Case Notes</label>
+                    <input
+                      type="text"
+                      name="notes"
+                      placeholder="Special instructions, custody notes, etc."
+                      className="form-input"
+                      value={formData.notes}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 7: Address */}
                 <div className="form-field">
                   <label className="field-lbl">Residential / Chamber Address</label>
                   <div className="input-with-icon align-top">
@@ -403,6 +635,20 @@ export default function ClientManagement() {
                     <RefreshCw size={14} />
                     <span>UPDATE</span>
                   </button>
+
+                  {selectedId && (
+                    <button
+                      type="button"
+                      className="act-btn"
+                      style={{ background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}
+                      onClick={() => promptDeleteClient(selectedClient)}
+                      disabled={loading}
+                      title="Delete client with confirmation"
+                    >
+                      <Trash2 size={14} />
+                      <span>DELETE</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -443,7 +689,7 @@ export default function ClientManagement() {
                 <Search size={14} className="search-ic" />
                 <input
                   type="text"
-                  placeholder="Search by client ID, name, phone, S/O or address..."
+                  placeholder="Search by client ID, name, mobile, extra phone, category or address..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="table-search-input"
@@ -460,12 +706,12 @@ export default function ClientManagement() {
                 <table className="mgmt-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '85px' }}>CLIENT ID</th>
+                      <th style={{ width: '80px' }}>CLIENT ID</th>
                       <th>CLIENT NAME</th>
-                      <th>S/O OR W/O</th>
+                      <th>CATEGORY &amp; ROLE</th>
                       <th style={{ width: '105px' }}>PHONE</th>
                       <th style={{ width: '85px' }}>FEES (₹)</th>
-                      <th style={{ width: '90px' }}>REG. DATE</th>
+                      <th style={{ width: '85px' }}>ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -492,16 +738,22 @@ export default function ClientManagement() {
                             <td>
                               <div className="client-name-cell">
                                 <strong className="primary-text">{client.name}</strong>
-                                {client.referenceName && (
-                                  <small className="muted-subtext">Ref: {client.referenceName}</small>
-                                )}
+                                <small className="muted-subtext">{client.relation || client.address || '—'}</small>
                               </div>
                             </td>
                             <td>
-                              <span className="cell-text">{client.relation || '—'}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: '600', color: '#1e40af' }}>{client.clientCategory || 'Civil'}</span>
+                                <span style={{ fontSize: '10px', color: '#64748b' }}>{client.casePosition || 'Litigant'}</span>
+                              </div>
                             </td>
                             <td>
-                              <span className="cell-phone">{client.phone}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span className="cell-phone">{client.phone}</span>
+                                {client.extraPhone && (
+                                  <small style={{ fontSize: '10px', color: '#64748b' }}>Alt: {client.extraPhone}</small>
+                                )}
+                              </div>
                             </td>
                             <td>
                               <span className="cell-fees">
@@ -509,7 +761,26 @@ export default function ClientManagement() {
                               </span>
                             </td>
                             <td>
-                              <span className="cell-date">{client.date}</span>
+                              <div style={{ display: 'flex', gap: '4px' }} onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  className="btn-icon-subtle"
+                                  style={{ padding: '4px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer' }}
+                                  onClick={() => handleOpenHistory(client)}
+                                  title="View Cases & Financial History"
+                                >
+                                  <Eye size={13} color="#2563eb" />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-icon-subtle"
+                                  style={{ padding: '4px 6px', borderRadius: '4px', border: '1px solid #fecaca', background: '#fff1f2', cursor: 'pointer' }}
+                                  onClick={() => promptDeleteClient(client)}
+                                  title="Delete Client Record"
+                                >
+                                  <Trash2 size={13} color="#dc2626" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         )
@@ -522,19 +793,162 @@ export default function ClientManagement() {
               {/* Table Footer Instructions */}
               <div className="table-foot-hint">
                 <span className="hint-highlight">Tip:</span>
-                <span>Click any row to load into form for editing or printing. Click <b>New Client Form</b> to register a fresh client.</span>
+                <span>Click any row to load into form. Click the <Eye size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> icon to view case &amp; payment history.</span>
               </div>
             </div>
           </div>
 
-          {/* ================= Printable Docket (Rendered during Print) ================= */}
+          {/* ================= CLIENT HISTORY MODAL ================= */}
+          {historyModalClient && (
+            <div className="mgmt-modal-overlay" onClick={() => setHistoryModalClient(null)}>
+              <div className="mgmt-modal-box" style={{ maxWidth: '750px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
+                <div className="mgmt-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>
+                      Client History: {historyModalClient.client?.name} ({historyModalClient.client?.id})
+                    </h3>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
+                      Phone: {historyModalClient.client?.phone} · Address: {historyModalClient.client?.address || 'N/A'}
+                    </p>
+                  </div>
+                  <button className="clear-search-btn" onClick={() => setHistoryModalClient(null)}>✕</button>
+                </div>
+
+                {/* Financial Summary */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '14px 0' }}>
+                  <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Total Case Fees</span>
+                    <strong style={{ fontSize: '15px', color: '#0f172a' }}>₹{Number(historyModalClient.financials.totalFees).toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div style={{ background: '#f0fdf4', padding: '10px', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                    <span style={{ fontSize: '11px', color: '#166534', display: 'block' }}>Total Paid</span>
+                    <strong style={{ fontSize: '15px', color: '#15803d' }}>₹{Number(historyModalClient.financials.totalPaid).toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div style={{ background: '#fff1f2', padding: '10px', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                    <span style={{ fontSize: '11px', color: '#991b1b', display: 'block' }}>Outstanding Due</span>
+                    <strong style={{ fontSize: '15px', color: '#b91c1c' }}>₹{Number(historyModalClient.financials.totalDue).toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
+
+                {/* Linked Cases */}
+                <h4 style={{ fontSize: '13px', margin: '12px 0 6px', color: '#1e293b' }}>
+                  Linked Cases ({historyModalClient.cases.length})
+                </h4>
+                {historyModalClient.cases.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>No cases linked yet to this client.</p>
+                ) : (
+                  <div style={{ maxHeight: '140px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                    <table className="mgmt-table" style={{ fontSize: '12px' }}>
+                      <thead>
+                        <tr>
+                          <th>Case ID</th>
+                          <th>Case Number</th>
+                          <th>Court</th>
+                          <th>Next Date</th>
+                          <th>Total</th>
+                          <th>Due</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historyModalClient.cases.map((c) => (
+                          <tr key={c.id}>
+                            <td><b>{c.id}</b></td>
+                            <td>{c.caseNumber}</td>
+                            <td>{c.courtName}</td>
+                            <td>{c.nextDate || '—'}</td>
+                            <td>₹{Number(c.totalFees || 0).toLocaleString('en-IN')}</td>
+                            <td style={{ color: c.dueAmount > 0 ? '#dc2626' : '#16a34a', fontWeight: '600' }}>
+                              ₹{Number(c.dueAmount || 0).toLocaleString('en-IN')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Payment History */}
+                <h4 style={{ fontSize: '13px', margin: '14px 0 6px', color: '#1e293b' }}>
+                  Payment Records ({historyModalClient.payments.length})
+                </h4>
+                {historyModalClient.payments.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: '#94a3b8' }}>No payment receipts recorded yet.</p>
+                ) : (
+                  <div style={{ maxHeight: '140px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                    <table className="mgmt-table" style={{ fontSize: '12px' }}>
+                      <thead>
+                        <tr>
+                          <th>Receipt</th>
+                          <th>Date</th>
+                          <th>Case ID</th>
+                          <th>Mode</th>
+                          <th>Amount</th>
+                          <th>Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historyModalClient.payments.map((p) => (
+                          <tr key={p.id}>
+                            <td><b>{p.id}</b></td>
+                            <td>{p.paymentDate}</td>
+                            <td>{p.caseId}</td>
+                            <td>{p.mode}</td>
+                            <td style={{ color: '#16a34a', fontWeight: '600' }}>₹{Number(p.amount).toLocaleString('en-IN')}</td>
+                            <td>{p.remarks || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                  <button className="btn-secondary" onClick={() => setHistoryModalClient(null)}>
+                    Close History
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================= DELETE CONFIRMATION MODAL ================= */}
+          {showDeleteModal && clientToDelete && (
+            <div className="mgmt-modal-overlay" onClick={() => setShowDeleteModal(false)}>
+              <div className="mgmt-modal-box" style={{ maxWidth: '420px', width: '90%' }} onClick={(e) => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    <Trash2 size={18} color="#dc2626" />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#991b1b' }}>Delete Client Record?</h3>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>This action cannot be undone.</p>
+                  </div>
+                </div>
+                <p style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5', margin: '10px 0 16px' }}>
+                  Are you sure you want to permanently delete <strong>{clientToDelete.name}</strong> ({clientToDelete.id})? All case linkages will be detached.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+                  <button
+                    className="btn-primary"
+                    style={{ background: '#dc2626', borderColor: '#b91c1c' }}
+                    onClick={confirmDeleteClient}
+                  >
+                    Confirm Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================= Printable Docket ================= */}
           {selectedClient && (
             <div className="printable-docket" id="printable-client-docket">
               <div className="print-header">
                 <div className="print-chambers">
                   <h2>{OFFICE.name}</h2>
                   <p className="print-address">{OFFICE.address}</p>
-                  <p className="print-title">CLIENT REGISTRATION DOCKET &amp; CASE RECORD</p>
+                  <p className="print-title">CLIENT REGISTRATION DOCKET &amp; PRACTICE RECORD</p>
                 </div>
                 <div className="print-meta">
                   <div><b>Docket ID:</b> {selectedClient.id}</div>
@@ -555,8 +969,20 @@ export default function ClientManagement() {
                   <tr>
                     <th>S/O or W/O:</th>
                     <td>{selectedClient.relation || '—'}</td>
-                    <th>Contact Phone:</th>
-                    <td>{selectedClient.phone || '—'}</td>
+                    <th>Mobile Phone:</th>
+                    <td>{selectedClient.phone || '—'} {selectedClient.extraPhone ? `(Alt: ${selectedClient.extraPhone})` : ''}</td>
+                  </tr>
+                  <tr>
+                    <th>Client Category:</th>
+                    <td>{selectedClient.clientCategory || 'Civil Litigation'}</td>
+                    <th>Legal Role / Position:</th>
+                    <td>{selectedClient.casePosition || 'Petitioner'}</td>
+                  </tr>
+                  <tr>
+                    <th>Urgency Level:</th>
+                    <td>{selectedClient.urgency || 'Normal'}</td>
+                    <th>Fee Agreement:</th>
+                    <td>{selectedClient.feeAgreement || 'Lump Sum'}</td>
                   </tr>
                   <tr>
                     <th>Residential Address:</th>
@@ -564,12 +990,12 @@ export default function ClientManagement() {
                   </tr>
                   <tr>
                     <th>Reference Person:</th>
-                    <td>{selectedClient.referenceName || 'Direct'}</td>
+                    <td>{selectedClient.referenceName || 'Direct Client'}</td>
                     <th>Reference Phone:</th>
                     <td>{selectedClient.referencePhone || '—'}</td>
                   </tr>
                   <tr>
-                    <th>Case / Professional Fees:</th>
+                    <th>Agreed Retainer Fees:</th>
                     <td>₹{Number(selectedClient.fees || 0).toLocaleString('en-IN')}</td>
                     <th>Registration Status:</th>
                     <td>Permanent Record Verified</td>

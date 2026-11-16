@@ -2,37 +2,33 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   FolderCog, PenSquare, BarChart3, QrCode, Plus, CalendarDays,
-  ChevronRight, Scale, Briefcase, Receipt, LayoutDashboard
+  ChevronRight, Scale, Briefcase, Receipt, LayoutDashboard,
+  CreditCard, AlertTriangle, UploadCloud, BellRing, Tags, BadgeIndianRupee
 } from 'lucide-react'
 import Topbar from '../components/Topbar.jsx'
 import StatCard from '../components/StatCard.jsx'
 import { STATS, MASTER_ENTRY, DATA_ENTRY, REPORTS } from '../data/menu.js'
-import { getClients, getCases, onStorageUpdate } from '../services/storageService.js'
+import { getPracticeOverviewStats, onStorageUpdate } from '../services/storageService.js'
 import './dashboard.css'
 
 // Stat card click -> related screen
 const STAT_LINK = {
   clients: '/clients',
   cases: '/cases',
-  billing: '/module/client-billing',
-  payment: '/module/client-payment',
-  expense: '/module/expense',
-  consultancy: '/module/income-expense-report',
+  billing: '/due-list',
+  payment: '/payments',
+  expense: '/expenses',
+  consultancy: '/consultancy-fees',
 }
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [clientsCount, setClientsCount] = useState(() => 3157 + Math.max(0, getClients().length - 6))
-  const [casesCount, setCasesCount] = useState(() => 3188 + Math.max(0, getCases().length - 6))
+  const [overviewStats, setOverviewStats] = useState(() => getPracticeOverviewStats())
 
-  // Listen to storage changes to keep statistics dynamic
+  // Listen to storage changes to keep statistics live & dynamic
   useEffect(() => {
     return onStorageUpdate(() => {
-      const cls = getClients()
-      const css = getCases()
-      // Base historical records + any newly created client/case entries
-      setClientsCount(3157 + Math.max(0, cls.length - 6))
-      setCasesCount(3188 + Math.max(0, css.length - 6))
+      setOverviewStats(getPracticeOverviewStats())
     })
   }, [])
 
@@ -46,8 +42,12 @@ export default function Dashboard() {
 
   // Inject real dynamic counts into the statistics cards
   const displayStats = STATS.map((s) => {
-    if (s.key === 'clients' && clientsCount > 0) return { ...s, value: clientsCount }
-    if (s.key === 'cases' && casesCount > 0) return { ...s, value: casesCount }
+    if (s.key === 'clients') return { ...s, value: overviewStats.totalClients }
+    if (s.key === 'cases') return { ...s, value: overviewStats.totalCases }
+    if (s.key === 'billing') return { ...s, value: overviewStats.totalBilling }
+    if (s.key === 'payment') return { ...s, value: overviewStats.totalPayment }
+    if (s.key === 'expense') return { ...s, value: overviewStats.totalExpense }
+    if (s.key === 'consultancy') return { ...s, value: overviewStats.totalConsultancy }
     return s
   })
 
@@ -73,13 +73,21 @@ export default function Dashboard() {
               <Scale size={17} />
               <span className="rail-tip">Clients</span>
             </button>
-            <button className="rail-btn" onClick={() => go('client-billing')} title="Client Billing">
-              <Receipt size={17} />
-              <span className="rail-tip">Billing</span>
+            <button className="rail-btn" onClick={() => go('/payments')} title="Payment & Accounts">
+              <CreditCard size={17} />
+              <span className="rail-tip">Payments</span>
             </button>
-            <button className="rail-btn" onClick={() => go('date-wise-case-list-report')} title="Reports">
+            <button className="rail-btn" onClick={() => go('/due-list')} title="Outstanding Due List">
+              <AlertTriangle size={17} />
+              <span className="rail-tip">Dues</span>
+            </button>
+            <button className="rail-btn" onClick={() => go('/reminders')} title="Hearing Schedule">
+              <BellRing size={17} />
+              <span className="rail-tip">Hearings</span>
+            </button>
+            <button className="rail-btn" onClick={() => go('/case-search')} title="Reports & Query">
               <BarChart3 size={17} />
-              <span className="rail-tip">Reports</span>
+              <span className="rail-tip">Search</span>
             </button>
           </nav>
         </div>
@@ -87,7 +95,7 @@ export default function Dashboard() {
         <div className="rail-bottom">
           <button
             className="rail-qr"
-            title="Advocate Chambers Verification QR"
+            title="Advocate Chambers Digital Verification QR"
             onClick={() => alert('Advocate Chambers Digital Verification QR')}
           >
             <QrCode size={18} />
@@ -110,13 +118,13 @@ export default function Dashboard() {
                 <span className="badge-highlight">Active Session</span>
               </div>
               <h1 className="dash-title">Practice Overview</h1>
-              <p className="dash-desc">Real-time statistics for clients, cases, billing and expenditures</p>
+              <p className="dash-desc">Real-time statistics for clients, cases, fee billing, recoveries and expenditures</p>
             </div>
 
             <div className="dash-head-actions">
-              <button className="btn-secondary" onClick={() => go('date-wise-case-list-report')}>
+              <button className="btn-secondary" onClick={() => go('/reminders')}>
                 <CalendarDays size={14} />
-                <span>Today's Cases</span>
+                <span>Today's Hearings</span>
               </button>
               <button className="btn-primary" onClick={() => go('/cases')}>
                 <Plus size={15} strokeWidth={2.4} />
@@ -158,7 +166,7 @@ export default function Dashboard() {
                     <button
                       key={m.slug}
                       className="master-card"
-                      onClick={() => go(m.slug === 'client-master' ? '/clients' : m.slug === 'case-master' ? '/cases' : m.slug)}
+                      onClick={() => go(m.slug)}
                     >
                       <span className="mc-icon">
                         <m.icon size={16} strokeWidth={2.2} />
@@ -182,7 +190,7 @@ export default function Dashboard() {
                     </span>
                     <div>
                       <h2>Data Entry &amp; Operations</h2>
-                      <span className="panel-sub">Daily litigation records, billing &amp; hearing schedules</span>
+                      <span className="panel-sub">Daily litigation records, payments &amp; document vaults</span>
                     </div>
                   </div>
                   <span className="panel-badge">{DATA_ENTRY.length} Entry Modules</span>
@@ -193,7 +201,7 @@ export default function Dashboard() {
                     <button
                       key={m.slug}
                       className="data-card"
-                      onClick={() => go(m.slug === 'client-information' ? '/clients' : m.slug === 'case-next-entry' ? '/cases' : m.slug)}
+                      onClick={() => go(m.slug)}
                     >
                       <span className="dc-icon">
                         <m.icon size={15} strokeWidth={2.2} />
