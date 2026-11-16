@@ -136,9 +136,12 @@ export default function Dashboard() {
           {/* Compact 6-Card Metric Strip with Subtle Professional Palette */}
           <section className="stats-section" aria-label="Key Performance Metrics">
             <div className="stats-grid">
-              {displayStats.map((s, i) => (
-                <StatCard key={s.key} {...s} delay={i * 35} onClick={() => go(STAT_LINK[s.key])} />
-              ))}
+              {displayStats.map((s, i) => {
+                const { key: statKey, ...rest } = s
+                return (
+                  <StatCard key={statKey} {...rest} delay={i * 35} onClick={() => go(STAT_LINK[statKey])} />
+                )
+              })}
             </div>
           </section>
 
