@@ -4,7 +4,7 @@ import {
   Users, UserPlus, Save, RefreshCw, Printer, XCircle, Search,
   Phone, MapPin, Calendar, IndianRupee, ArrowLeft, CheckCircle2,
   AlertCircle, ChevronRight, UserCheck, Trash2, Eye,
-  ShieldAlert
+  ShieldAlert, Plus
 } from 'lucide-react'
 import Topbar from '../components/Topbar.jsx'
 import { OFFICE } from '../data/menu.js'
@@ -35,6 +35,8 @@ export default function ClientManagement() {
     extraPhone: '',
     referenceName: '',
     referencePhone: '',
+    referencePhones: [''],
+    otherReferences: [{ name: '', phone: '' }],
     clientCategory: 'Civil',
     casePosition: 'Petitioner / Plaintiff',
     urgency: 'Normal',
@@ -78,6 +80,58 @@ export default function ClientManagement() {
     }
   }
 
+  // Reference phone array handlers
+  const handleRefPhoneChange = (index, value) => {
+    setFormData((prev) => {
+      const list = [...(prev.referencePhones || [''])]
+      list[index] = value
+      return { ...prev, referencePhones: list }
+    })
+    if (errors[`refPhone_${index}`]) {
+      setErrors((prev) => ({ ...prev, [`refPhone_${index}`]: null }))
+    }
+  }
+
+  const handleAddRefPhone = () => {
+    setFormData((prev) => ({
+      ...prev,
+      referencePhones: [...(prev.referencePhones || ['']), ''],
+    }))
+  }
+
+  const handleRemoveRefPhone = (index) => {
+    setFormData((prev) => {
+      const list = (prev.referencePhones || ['']).filter((_, i) => i !== index)
+      return { ...prev, referencePhones: list.length > 0 ? list : [''] }
+    })
+  }
+
+  // Other person's reference handlers
+  const handleOtherRefChange = (index, field, value) => {
+    setFormData((prev) => {
+      const list = [...(prev.otherReferences || [{ name: '', phone: '' }])]
+      list[index] = { ...list[index], [field]: value }
+      return { ...prev, otherReferences: list }
+    })
+    if (errors[`otherRefPhone_${index}`]) {
+      setErrors((prev) => ({ ...prev, [`otherRefPhone_${index}`]: null }))
+    }
+  }
+
+  const handleAddOtherRef = () => {
+    setFormData((prev) => ({
+      ...prev,
+      otherReferences: [...(prev.otherReferences || []), { name: '', phone: '' }],
+    }))
+  }
+
+  const handleRemoveOtherRef = (index) => {
+    setFormData((prev) => {
+      const list = (prev.otherReferences || []).filter((_, i) => i !== index)
+      return { ...prev, otherReferences: list.length > 0 ? list : [{ name: '', phone: '' }] }
+    })
+  }
+
   // Validation
   const validateForm = () => {
     const errs = {}
@@ -88,19 +142,59 @@ export default function ClientManagement() {
       errs.phone = 'Enter a valid 10-digit mobile number'
     }
     if (formData.extraPhone && !/^\d{10}$/.test(formData.extraPhone.replace(/[\s-+]/g, ''))) {
-      errs.extraPhone = 'Enter valid 10-digit extra phone'
+      errs.extraPhone = 'Enter valid 10-digit other phone number'
     }
-    if (formData.referencePhone && !/^\d{10}$/.test(formData.referencePhone.replace(/[\s-+]/g, ''))) {
-      errs.referencePhone = 'Enter valid 10-digit reference phone'
+    if (formData.referencePhones && formData.referencePhones.length > 0) {
+      formData.referencePhones.forEach((p, idx) => {
+        if (p && !/^\d{10}$/.test(p.replace(/[\s-+]/g, ''))) {
+          errs[`refPhone_${idx}`] = 'Enter valid 10-digit reference phone'
+        }
+      })
+    }
+    if (formData.otherReferences && formData.otherReferences.length > 0) {
+      formData.otherReferences.forEach((r, idx) => {
+        if (r.phone && !/^\d{10}$/.test(r.phone.replace(/[\s-+]/g, ''))) {
+          errs[`otherRefPhone_${idx}`] = 'Enter valid 10-digit contact number'
+        }
+      })
     }
     if (!formData.date) errs.date = 'Registration date is required'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
+  // Prepare clean payload for saving/updating
+  const preparePayload = () => {
+    const cleanedRefPhones = (formData.referencePhones || []).filter((p) => p && p.trim() !== '')
+    const cleanedOtherRefs = (formData.otherReferences || []).filter(
+      (r) => (r.name && r.name.trim() !== '') || (r.phone && r.phone.trim() !== '')
+    )
+    return {
+      ...formData,
+      referencePhones: cleanedRefPhones.length > 0 ? cleanedRefPhones : (formData.referencePhone ? [formData.referencePhone] : []),
+      referencePhone: cleanedRefPhones[0] || formData.referencePhone || '',
+      otherReferences: cleanedOtherRefs,
+      referenceName: cleanedOtherRefs[0]?.name || formData.referenceName || '',
+    }
+  }
+
   // Select a Client from the Table
   const handleSelectClient = (client) => {
     setSelectedId(client.id)
+    let refPhones = ['']
+    if (Array.isArray(client.referencePhones) && client.referencePhones.length > 0) {
+      refPhones = [...client.referencePhones]
+    } else if (client.referencePhone) {
+      refPhones = [client.referencePhone]
+    }
+
+    let otherRefs = [{ name: '', phone: '' }]
+    if (Array.isArray(client.otherReferences) && client.otherReferences.length > 0) {
+      otherRefs = client.otherReferences.map((r) => ({ name: r.name || '', phone: r.phone || '' }))
+    } else if (client.referenceName || client.referencePhone) {
+      otherRefs = [{ name: client.referenceName || '', phone: client.referencePhone || '' }]
+    }
+
     setFormData({
       name: client.name || '',
       relation: client.relation || '',
@@ -109,6 +203,8 @@ export default function ClientManagement() {
       extraPhone: client.extraPhone || '',
       referenceName: client.referenceName || '',
       referencePhone: client.referencePhone || '',
+      referencePhones: refPhones,
+      otherReferences: otherRefs,
       clientCategory: client.clientCategory || 'Civil',
       casePosition: client.casePosition || 'Petitioner / Plaintiff',
       urgency: client.urgency || 'Normal',
@@ -149,10 +245,11 @@ export default function ClientManagement() {
       return
     }
 
+    const payload = preparePayload()
     setLoading(true)
     setTimeout(() => {
       try {
-        const saved = saveClient(formData)
+        const saved = saveClient(payload)
         setSelectedId(saved.id)
         setDuplicateWarning(null)
         showToast('success', `Client ${saved.name} registered successfully with ID ${saved.id}!`)
@@ -187,10 +284,11 @@ export default function ClientManagement() {
       return
     }
 
+    const payload = preparePayload()
     setLoading(true)
     setTimeout(() => {
       try {
-        const updated = updateClient(selectedId, formData)
+        const updated = updateClient(selectedId, payload)
         setDuplicateWarning(null)
         showToast('success', `Client ${updated.id} (${updated.name}) updated successfully!`)
       } catch (err) {
@@ -417,7 +515,24 @@ export default function ClientManagement() {
                   />
                 </div>
 
-                {/* Row 4: Mobile Number & Extra Phone Number */}
+                {/* ORDER CHANGE REQUIRED: Client Address ABOVE Mobile Number */}
+                {/* Residential Address (No "Chamber" wording) */}
+                <div className="form-field">
+                  <label className="field-lbl">Residential Address</label>
+                  <div className="input-with-icon align-top">
+                    <MapPin size={14} className="input-ic top-ic" />
+                    <textarea
+                      name="address"
+                      rows={2}
+                      placeholder="Village/City, Post Office, Police Station, District, PIN..."
+                      className="form-input form-textarea"
+                      value={formData.address}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Mobile Number & Other Phone Number (Renamed from Extra Phone Number) */}
                 <div className="form-row-2">
                   <div className="form-field">
                     <label className="field-lbl">Mobile Number <span className="req">*</span></label>
@@ -437,7 +552,7 @@ export default function ClientManagement() {
                   </div>
 
                   <div className="form-field">
-                    <label className="field-lbl">Extra Phone Number</label>
+                    <label className="field-lbl">Other Phone Number</label>
                     <div className="input-with-icon">
                       <Phone size={14} className="input-ic" />
                       <input
@@ -454,120 +569,142 @@ export default function ClientManagement() {
                   </div>
                 </div>
 
-                {/* ================= FOUR CLIENT ENTRY OPTIONS / FIELDS ================= */}
+                {/* Multiple Reference Phone Numbers */}
+                <div className="form-field" style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label className="field-lbl" style={{ margin: 0, fontWeight: '700' }}>Reference Phone Number(s)</label>
+                    <button
+                      type="button"
+                      onClick={handleAddRefPhone}
+                      className="btn-secondary"
+                      style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' }}
+                    >
+                      <Plus size={12} />
+                      <span>Add Another Number (+)</span>
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(formData.referencePhones || ['']).map((refPhone, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div className="input-with-icon" style={{ flex: 1 }}>
+                          <Phone size={14} className="input-ic" />
+                          <input
+                            type="tel"
+                            placeholder={`Reference Phone #${idx + 1}`}
+                            maxLength={10}
+                            className={`form-input ${errors[`refPhone_${idx}`] ? 'input-err' : ''}`}
+                            value={refPhone}
+                            onChange={(e) => handleRefPhoneChange(idx, e.target.value)}
+                          />
+                        </div>
+                        {(formData.referencePhones || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRefPhone(idx)}
+                            className="btn-icon-subtle"
+                            style={{ padding: '6px 8px', border: '1px solid #fecaca', background: '#fff1f2', cursor: 'pointer', borderRadius: '4px', color: '#dc2626' }}
+                            title="Remove this reference number"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {Object.keys(errors).some(k => k.startsWith('refPhone_')) && (
+                    <span className="err-msg" style={{ display: 'block', marginTop: '4px' }}>
+                      Please enter valid 10-digit numbers for all reference phone entries.
+                    </span>
+                  )}
+                </div>
+
+                {/* Client Classification & Engagement: Only Option 1 remains (options 2, 3, 4 removed) */}
                 <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
                   <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#475569', marginBottom: '8px' }}>
-                    Client Classification &amp; Engagement Options
+                    Client Classification &amp; Engagement
                   </div>
-
-                  <div className="form-row-2">
-                    {/* Option 1: Client Category */}
-                    <div className="form-field">
-                      <label className="field-lbl">1. Client Category / Branch</label>
-                      <select
-                        name="clientCategory"
-                        className="form-input form-select"
-                        value={formData.clientCategory}
-                        onChange={handleChange}
-                      >
-                        <option value="Civil">Civil Litigation</option>
-                        <option value="Criminal">Criminal Defense / Bail</option>
-                        <option value="Revenue">Revenue &amp; Land Laws</option>
-                        <option value="Family / Matrimonial">Family / Matrimonial</option>
-                        <option value="Corporate">Corporate &amp; Commercial</option>
-                        <option value="Writ / Constitutional">High Court Writ</option>
-                        <option value="Consumer / Labor">Consumer / Labor Dispute</option>
-                        <option value="Other">Other Legal Matter</option>
-                      </select>
-                    </div>
-
-                    {/* Option 2: Case Nature / Position */}
-                    <div className="form-field">
-                      <label className="field-lbl">2. Legal Position / Role</label>
-                      <select
-                        name="casePosition"
-                        className="form-input form-select"
-                        value={formData.casePosition}
-                        onChange={handleChange}
-                      >
-                        <option value="Petitioner / Plaintiff">Petitioner / Plaintiff</option>
-                        <option value="Respondent / Defendant">Respondent / Defendant</option>
-                        <option value="Appellant">Appellant</option>
-                        <option value="Complainant / Informant">Complainant / Informant</option>
-                        <option value="Accused / Bail">Accused / Bail Deponent</option>
-                        <option value="Caveator">Caveator</option>
-                        <option value="Third Party / Intervenor">Third Party / Intervenor</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row-2" style={{ marginTop: '8px' }}>
-                    {/* Option 3: Priority / Urgency */}
-                    <div className="form-field">
-                      <label className="field-lbl">3. Matter Priority / Urgency</label>
-                      <select
-                        name="urgency"
-                        className="form-input form-select"
-                        value={formData.urgency}
-                        onChange={handleChange}
-                      >
-                        <option value="Normal">Normal Regular Matter</option>
-                        <option value="Urgent">Urgent Hearing / Moving</option>
-                        <option value="Stay / Bail Urgent">Stay / Injunction / Bail Urgent</option>
-                        <option value="Critical">Critical Limitation Date</option>
-                      </select>
-                    </div>
-
-                    {/* Option 4: Fee Agreement Model */}
-                    <div className="form-field">
-                      <label className="field-lbl">4. Fee Agreement Type</label>
-                      <select
-                        name="feeAgreement"
-                        className="form-input form-select"
-                        value={formData.feeAgreement}
-                        onChange={handleChange}
-                      >
-                        <option value="Lump Sum Agreed">Lump Sum Agreed Contract</option>
-                        <option value="Stage-wise Retainer">Stage-wise Retainer</option>
-                        <option value="Per Appearance">Per Appearance / Hearing</option>
-                        <option value="Pro-bono / Legal Aid">Pro-bono / Legal Aid</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 5: Reference Name & Phone */}
-                <div className="form-row-2">
                   <div className="form-field">
-                    <label className="field-lbl">Reference Name</label>
-                    <input
-                      type="text"
-                      name="referenceName"
-                      placeholder="Referred by (advocate, pradhan, doctor)"
-                      className="form-input"
-                      value={formData.referenceName}
+                    <label className="field-lbl">Client Category / Branch</label>
+                    <select
+                      name="clientCategory"
+                      className="form-input form-select"
+                      value={formData.clientCategory}
                       onChange={handleChange}
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="field-lbl">Reference Phone Number</label>
-                    <div className="input-with-icon">
-                      <Phone size={14} className="input-ic" />
-                      <input
-                        type="tel"
-                        name="referencePhone"
-                        placeholder="Referee contact number"
-                        maxLength={10}
-                        className={`form-input ${errors.referencePhone ? 'input-err' : ''}`}
-                        value={formData.referencePhone}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    {errors.referencePhone && <span className="err-msg">{errors.referencePhone}</span>}
+                    >
+                      <option value="Civil">Civil Litigation</option>
+                      <option value="Criminal">Criminal Defense / Bail</option>
+                      <option value="Revenue">Revenue &amp; Land Laws</option>
+                      <option value="Family / Matrimonial">Family / Matrimonial</option>
+                      <option value="Corporate">Corporate &amp; Commercial</option>
+                      <option value="Writ / Constitutional">High Court Writ</option>
+                      <option value="Consumer / Labor">Consumer / Labor Dispute</option>
+                      <option value="Other">Other Legal Matter</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Row 6: Agreed Fees & Notes */}
+                {/* Other Person's Reference Section (Add Multiple, Remove Individual) */}
+                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#475569' }}>
+                      Other Person's Reference
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddOtherRef}
+                      className="btn-secondary"
+                      style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' }}
+                    >
+                      <Plus size={12} />
+                      <span>Add Another Reference Person (+)</span>
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(formData.otherReferences || [{ name: '', phone: '' }]).map((ref, idx) => (
+                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'center' }}>
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Reference Person Name"
+                            className="form-input"
+                            value={ref.name}
+                            onChange={(e) => handleOtherRefChange(idx, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div className="input-with-icon">
+                          <Phone size={14} className="input-ic" />
+                          <input
+                            type="tel"
+                            placeholder="Contact Number"
+                            maxLength={10}
+                            className={`form-input ${errors[`otherRefPhone_${idx}`] ? 'input-err' : ''}`}
+                            value={ref.phone}
+                            onChange={(e) => handleOtherRefChange(idx, 'phone', e.target.value)}
+                          />
+                        </div>
+                        {(formData.otherReferences || []).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOtherRef(idx)}
+                            className="btn-icon-subtle"
+                            style={{ padding: '6px 8px', border: '1px solid #fecaca', background: '#fff1f2', cursor: 'pointer', borderRadius: '4px', color: '#dc2626' }}
+                            title="Remove this reference entry"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {Object.keys(errors).some(k => k.startsWith('otherRefPhone_')) && (
+                    <span className="err-msg" style={{ display: 'block', marginTop: '4px' }}>
+                      Please enter valid 10-digit phone numbers for reference persons.
+                    </span>
+                  )}
+                </div>
+
+                {/* Agreed Retainer Fees & Client Remarks / Case Notes */}
                 <div className="form-row-2">
                   <div className="form-field">
                     <label className="field-lbl">Agreed Retainer Fees (₹)</label>
@@ -591,22 +728,6 @@ export default function ClientManagement() {
                       placeholder="Special instructions, custody notes, etc."
                       className="form-input"
                       value={formData.notes}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-
-                {/* Row 7: Address */}
-                <div className="form-field">
-                  <label className="field-lbl">Residential / Chamber Address</label>
-                  <div className="input-with-icon align-top">
-                    <MapPin size={14} className="input-ic top-ic" />
-                    <textarea
-                      name="address"
-                      rows={2}
-                      placeholder="Village/City, Post Office, Police Station, District, PIN..."
-                      className="form-input form-textarea"
-                      value={formData.address}
                       onChange={handleChange}
                     />
                   </div>
@@ -751,7 +872,7 @@ export default function ClientManagement() {
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span className="cell-phone">{client.phone}</span>
                                 {client.extraPhone && (
-                                  <small style={{ fontSize: '10px', color: '#64748b' }}>Alt: {client.extraPhone}</small>
+                                  <small style={{ fontSize: '10px', color: '#64748b' }}>Other: {client.extraPhone}</small>
                                 )}
                               </div>
                             </td>
@@ -970,7 +1091,7 @@ export default function ClientManagement() {
                     <th>S/O or W/O:</th>
                     <td>{selectedClient.relation || '—'}</td>
                     <th>Mobile Phone:</th>
-                    <td>{selectedClient.phone || '—'} {selectedClient.extraPhone ? `(Alt: ${selectedClient.extraPhone})` : ''}</td>
+                    <td>{selectedClient.phone || '—'} {selectedClient.extraPhone ? `(Other: ${selectedClient.extraPhone})` : ''}</td>
                   </tr>
                   <tr>
                     <th>Client Category:</th>

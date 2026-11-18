@@ -1044,6 +1044,20 @@ export function recalculateCaseFinancials(caseId) {
   return cases[idx]
 }
 
+export function clearCaseDue(caseId) {
+  const cases = getCases()
+  const idx = cases.findIndex((c) => String(c.id).toLowerCase() === String(caseId).toLowerCase())
+  if (idx === -1) return false
+
+  const paid = Number(cases[idx].paidAmount || 0)
+  cases[idx].totalFees = paid
+  cases[idx].dueAmount = 0
+  cases[idx].updatedAt = new Date().toISOString()
+
+  writeStorage(CASES_KEY, cases)
+  return cases[idx]
+}
+
 // -------------------------------------------------------------
 // MODULE 4: PAYMENT MANAGEMENT & ACCOUNTS APIS
 // -------------------------------------------------------------

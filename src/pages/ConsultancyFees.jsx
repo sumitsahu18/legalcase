@@ -102,7 +102,7 @@ export default function ConsultancyFees() {
       try {
         const saved = saveConsultancyFee(formData)
         setSelectedId(saved.id)
-        showToast('success', `Consultancy fee ${saved.id} (₹${Number(saved.amount).toLocaleString('en-IN')}) saved! No Case ID created.`)
+        showToast('success', `Consultancy fee (₹${Number(saved.amount).toLocaleString('en-IN')}) saved for ${saved.clientName}!`)
       } catch (err) {
         showToast('error', err.message || 'Failed to save consultancy record.')
       } finally {
@@ -230,7 +230,7 @@ export default function ConsultancyFees() {
               <div className="panel-card-head">
                 <div className="pch-title">
                   <span className="pch-dot" style={{ background: '#0d9488' }} />
-                  <h3>{selectedId ? `Edit Consultation (${selectedId})` : 'New Consultancy Entry'}</h3>
+                  <h3>{selectedId ? 'Edit Consultation Entry' : 'New Consultancy Entry'}</h3>
                 </div>
                 {selectedId ? (
                   <span className="status-badge editing">Editing Consultation</span>
@@ -406,7 +406,7 @@ export default function ConsultancyFees() {
                 <table className="mgmt-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '80px' }}>RECEIPT</th>
+                      <th style={{ width: '65px', textAlign: 'center' }}>SL NO.</th>
                       <th>CLIENT NAME</th>
                       <th style={{ width: '105px' }}>PHONE</th>
                       <th style={{ width: '90px' }}>DATE</th>
@@ -424,7 +424,7 @@ export default function ConsultancyFees() {
                         </td>
                       </tr>
                     ) : (
-                      filteredRecords.map((rec) => {
+                      filteredRecords.map((rec, idx) => {
                         const isSelected = rec.id === selectedId
                         return (
                           <tr
@@ -432,7 +432,7 @@ export default function ConsultancyFees() {
                             className={`table-row-clickable ${isSelected ? 'row-selected' : ''}`}
                             onClick={() => handleSelectRecord(rec)}
                           >
-                            <td><span className="id-pill" style={{ background: '#ccfbf1', color: '#0f766e', border: '1px solid #99f6e4' }}>{rec.id}</span></td>
+                            <td style={{ textAlign: 'center', fontWeight: '700', color: '#64748b' }}>{idx + 1}</td>
                             <td><strong className="primary-text">{rec.clientName}</strong></td>
                             <td><span className="cell-phone">{rec.phone}</span></td>
                             <td><span className="cell-date">{rec.consultationDate}</span></td>

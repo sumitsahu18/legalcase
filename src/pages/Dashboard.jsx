@@ -3,11 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import {
   FolderCog, PenSquare, BarChart3, QrCode, Plus, CalendarDays,
   ChevronRight, Scale, Briefcase, Receipt, LayoutDashboard,
-  CreditCard, AlertTriangle, UploadCloud, BellRing, Tags, BadgeIndianRupee
+  CreditCard, AlertTriangle, UploadCloud, BellRing, Tags, BadgeIndianRupee,
+  Layers, Landmark
 } from 'lucide-react'
 import Topbar from '../components/Topbar.jsx'
 import StatCard from '../components/StatCard.jsx'
-import { STATS, MASTER_ENTRY, DATA_ENTRY, REPORTS } from '../data/menu.js'
+import {
+  STATS,
+  CASE_OPERATIONS_MODULES,
+  ACCOUNTS_FINANCIAL_MODULES
+} from '../data/menu.js'
 import { getPracticeOverviewStats, onStorageUpdate } from '../services/storageService.js'
 import './dashboard.css'
 
@@ -145,117 +150,91 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {/* Balanced 2-Column Operational Grid */}
-          <div className="dash-grid">
-            {/* Left Column: Master Entry & Data Entry */}
-            <div className="dash-left-col">
-              {/* Master Entry Panel */}
-              <div className="panel panel-master">
-                <div className="panel-head">
-                  <div className="panel-head-left">
-                    <span className="panel-icon-wrap icon-master">
-                      <FolderCog size={15} />
+          {/* Two Clearly Separated Dashboard Groups */}
+          <div className="dash-group-section">
+            {/* GROUP 1 – CASE MANAGEMENT & OPERATIONS */}
+            <section className="group-panel group-panel-case" aria-label="Case Management & Operations">
+              <div className="panel-head">
+                <div className="panel-head-left">
+                  <span className="panel-icon-wrap" style={{ background: '#eff6ff', color: '#1d4ed8', border: '1.5px solid #bfdbfe' }}>
+                    <Briefcase size={16} strokeWidth={2.2} />
+                  </span>
+                  <div>
+                    <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', letterSpacing: '0.2px' }}>
+                      GROUP 1 – CASE MANAGEMENT &amp; OPERATIONS
+                    </h2>
+                    <span className="panel-sub" style={{ color: '#475569' }}>
+                      Client Master, Case Master, Hearing Calendar, Cause Lists &amp; Litigation Registry
                     </span>
-                    <div>
-                      <h2>Master Registry</h2>
-                      <span className="panel-sub">Primary registries &amp; core legal configurations</span>
-                    </div>
                   </div>
-                  <span className="panel-badge">{MASTER_ENTRY.length} Masters</span>
                 </div>
-
-                <div className="master-grid">
-                  {MASTER_ENTRY.map((m) => (
-                    <button
-                      key={m.slug}
-                      className="master-card"
-                      onClick={() => go(m.slug)}
-                    >
-                      <span className="mc-icon">
-                        <m.icon size={16} strokeWidth={2.2} />
-                      </span>
-                      <div className="mc-body">
-                        <span className="mc-title">{m.label}</span>
-                        <span className="mc-desc">{m.desc}</span>
-                      </div>
-                      <ChevronRight size={14} className="mc-arrow" />
-                    </button>
-                  ))}
-                </div>
+                <span className="panel-badge" style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}>
+                  {CASE_OPERATIONS_MODULES.length} Modules
+                </span>
               </div>
 
-              {/* Data Entry Panel */}
-              <div className="panel panel-data">
-                <div className="panel-head">
-                  <div className="panel-head-left">
-                    <span className="panel-icon-wrap icon-data">
-                      <PenSquare size={15} />
+              <div className="dash-group-grid">
+                {CASE_OPERATIONS_MODULES.map((m) => (
+                  <button
+                    key={m.slug}
+                    className={`module-card ${m.isMaster ? 'card-master' : ''}`}
+                    onClick={() => go(m.slug)}
+                    title={m.desc}
+                  >
+                    <span className="mod-icon-wrap" style={m.isMaster ? { background: '#f1f5f9', color: '#2563eb' } : {}}>
+                      <m.icon size={16} strokeWidth={2.2} />
                     </span>
-                    <div>
-                      <h2>Data Entry &amp; Operations</h2>
-                      <span className="panel-sub">Daily litigation records, payments &amp; document vaults</span>
+                    <div className="mod-body">
+                      <span className="mod-title">{m.label}</span>
+                      <span className="mod-desc">{m.desc}</span>
                     </div>
-                  </div>
-                  <span className="panel-badge">{DATA_ENTRY.length} Entry Modules</span>
-                </div>
-
-                <div className="data-grid">
-                  {DATA_ENTRY.map((m) => (
-                    <button
-                      key={m.slug}
-                      className="data-card"
-                      onClick={() => go(m.slug)}
-                    >
-                      <span className="dc-icon">
-                        <m.icon size={15} strokeWidth={2.2} />
-                      </span>
-                      <div className="dc-body">
-                        <span className="dc-title">{m.label}</span>
-                        <span className="dc-desc">{m.desc}</span>
-                      </div>
-                      <ChevronRight size={13} className="dc-arrow" />
-                    </button>
-                  ))}
-                </div>
+                    <ChevronRight size={14} className="mod-arrow" />
+                  </button>
+                ))}
               </div>
-            </div>
+            </section>
 
-            {/* Right Column: Reports & Legal Analytics */}
-            <div className="dash-reports-col">
-              <section className="panel panel-reports">
-                <div className="panel-head">
-                  <div className="panel-head-left">
-                    <span className="panel-icon-wrap icon-reports">
-                      <BarChart3 size={15} />
+            {/* GROUP 2 – ACCOUNTS & FINANCIAL MANAGEMENT */}
+            <section className="group-panel group-panel-accounts" aria-label="Accounts & Financial Management">
+              <div className="panel-head">
+                <div className="panel-head-left">
+                  <span className="panel-icon-wrap" style={{ background: '#ecfdf5', color: '#047857', border: '1.5px solid #a7f3d0' }}>
+                    <Receipt size={16} strokeWidth={2.2} />
+                  </span>
+                  <div>
+                    <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', letterSpacing: '0.2px' }}>
+                      GROUP 2 – ACCOUNTS &amp; FINANCIAL MANAGEMENT
+                    </h2>
+                    <span className="panel-sub" style={{ color: '#475569' }}>
+                      Client Billing, Payment Receipts, Expenses, Consultancy Fees &amp; Outstanding Dues
                     </span>
-                    <div>
-                      <h2>Reports &amp; Case Intelligence</h2>
-                      <span className="panel-sub">Financial statements, cause lists &amp; judicial rosters</span>
-                    </div>
                   </div>
-                  <span className="panel-badge">{REPORTS.length} Reports</span>
                 </div>
+                <span className="panel-badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+                  {ACCOUNTS_FINANCIAL_MODULES.length} Modules
+                </span>
+              </div>
 
-                <div className="reports-list">
-                  {REPORTS.map((r, idx) => (
-                    <button key={r.slug} className="report-row" onClick={() => go(r.slug)}>
-                      <span className="rr-num">0{idx + 1}</span>
-                      <span className="rr-icon">
-                        <r.icon size={16} strokeWidth={2.2} />
-                      </span>
-                      <div className="rr-body">
-                        <span className="rr-title">{r.label}</span>
-                        <span className="rr-desc">{r.desc || 'Comprehensive report & audit statement'}</span>
-                      </div>
-                      <span className="rr-action">
-                        <span>View</span>
-                        <ChevronRight size={13} />
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            </div>
+              <div className="dash-group-grid">
+                {ACCOUNTS_FINANCIAL_MODULES.map((m) => (
+                  <button
+                    key={m.slug}
+                    className="module-card"
+                    onClick={() => go(m.slug)}
+                    title={m.desc}
+                  >
+                    <span className="mod-icon-wrap">
+                      <m.icon size={16} strokeWidth={2.2} />
+                    </span>
+                    <div className="mod-body">
+                      <span className="mod-title">{m.label}</span>
+                      <span className="mod-desc">{m.desc}</span>
+                    </div>
+                    <ChevronRight size={14} className="mod-arrow" />
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
 
           <footer className="dash-foot">

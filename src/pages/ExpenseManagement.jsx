@@ -518,21 +518,22 @@ export default function ExpenseManagement({ initialTab = 'expenses' }) {
                 </div>
 
                 <div className="table-scroll-container">
-                  <table className="mgmt-table">
+                  <table className="mgmt-table table-fluid">
                     <thead>
                       <tr>
-                        <th style={{ width: '75px' }}>VOUCHER</th>
-                        <th style={{ width: '85px' }}>DATE</th>
-                        <th>EXPENSE HEAD &amp; PAID TO</th>
+                        <th className="nowrap-col" style={{ width: '85px' }}>VOUCHER NUMBER</th>
+                        <th className="nowrap-col" style={{ width: '85px' }}>DATE</th>
+                        <th style={{ width: '130px' }}>EXPENSE HEAD</th>
+                        <th style={{ width: '110px' }}>PAID TO</th>
                         <th>DESCRIPTION</th>
-                        <th style={{ width: '90px', textAlign: 'right' }}>AMOUNT (₹)</th>
-                        <th style={{ width: '60px' }}>ACTION</th>
+                        <th className="nowrap-col" style={{ width: '95px', textAlign: 'right' }}>AMOUNT</th>
+                        <th className="nowrap-col" style={{ width: '75px', textAlign: 'right' }}>ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredExpenses.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="empty-table-cell">
+                          <td colSpan={7} className="empty-table-cell">
                             <AlertCircle size={18} className="empty-ic" />
                             <span>No expense vouchers match query.</span>
                           </td>
@@ -546,34 +547,75 @@ export default function ExpenseManagement({ initialTab = 'expenses' }) {
                               className={`table-row-clickable ${isSelected ? 'row-selected' : ''}`}
                               onClick={() => handleSelectExpense(ex)}
                             >
-                              <td><span className="id-pill" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>{ex.id}</span></td>
-                              <td><span className="cell-date">{ex.expenseDate}</span></td>
+                              <td className="nowrap-col"><span className="id-pill" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>{ex.id}</span></td>
+                              <td className="nowrap-col"><span className="cell-date">{ex.expenseDate}</span></td>
                               <td>
-                                <strong className="primary-text">{ex.headName}</strong>
-                                <small className="muted-subtext">{ex.paidTo || ex.paymentMode}</small>
+                                <strong className="primary-text" style={{ fontSize: '12px' }}>{ex.headName}</strong>
                               </td>
                               <td>
-                                <span style={{ fontSize: '12px', color: '#334155' }}>{ex.description}</span>
-                                {ex.remarks && <small className="muted-subtext">Ref: {ex.remarks}</small>}
+                                <span style={{ fontSize: '12px', color: '#1e293b', fontWeight: '500' }}>
+                                  {ex.paidTo || '—'}
+                                </span>
+                                {ex.paymentMode && (
+                                  <small className="muted-subtext" style={{ display: 'block', fontSize: '10.5px' }}>
+                                    {ex.paymentMode}
+                                  </small>
+                                )}
                               </td>
-                              <td style={{ textAlign: 'right' }}>
+                              <td style={{ maxWidth: '240px' }}>
+                                <div
+                                  title={`${ex.description || ''}${ex.remarks ? ` (Ref: ${ex.remarks})` : ''}`}
+                                  style={{
+                                    fontSize: '12px',
+                                    color: '#334155',
+                                    lineHeight: '1.35',
+                                    wordBreak: 'break-word',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  {ex.description}
+                                </div>
+                                {ex.remarks && (
+                                  <small className="muted-subtext" style={{ display: 'block', fontSize: '10.5px' }}>
+                                    Ref: {ex.remarks}
+                                  </small>
+                                )}
+                              </td>
+                              <td className="nowrap-col" style={{ textAlign: 'right' }}>
                                 <span style={{ color: '#d97706', fontWeight: '800', fontSize: '13px' }}>
                                   ₹{Number(ex.amount || 0).toLocaleString('en-IN')}
                                 </span>
                               </td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="btn-icon-subtle"
-                                  style={{ padding: '3px 6px', border: '1px solid #fecaca', background: '#fff1f2', cursor: 'pointer' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setItemToDelete({ type: 'expense', item: ex })
-                                  }}
-                                  title="Delete Expense"
-                                >
-                                  <Trash2 size={12} color="#dc2626" />
-                                </button>
+                              <td className="nowrap-col" style={{ textAlign: 'right' }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                                  <button
+                                    type="button"
+                                    className="btn-icon-subtle"
+                                    style={{ padding: '3px 6px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleSelectExpense(ex)
+                                    }}
+                                    title="Edit Expense"
+                                  >
+                                    <Edit3 size={12} color="#475569" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-icon-subtle"
+                                    style={{ padding: '3px 6px', border: '1px solid #fecaca', background: '#fff1f2', cursor: 'pointer' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setItemToDelete({ type: 'expense', item: ex })
+                                    }}
+                                    title="Delete Expense"
+                                  >
+                                    <Trash2 size={12} color="#dc2626" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           )

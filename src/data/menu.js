@@ -23,43 +23,49 @@ export const STATS = [
   { key: 'consultancy', label: 'Total Consultancy Fees', value: 38827,    icon: BadgeIndianRupee, theme: 'teal',    money: true,  trend: 'Direct consultation' },
 ]
 
-export const MASTER_ENTRY = [
-  { slug: 'client-master',       label: 'Client Master',       icon: UserPlus,   desc: 'Register & edit client details' },
-  { slug: 'case-master',         label: 'Case Master',         icon: FolderPlus, desc: 'Register & manage court cases' },
-  { slug: 'expense-head-master', label: 'Expense Head Master', icon: Tags,       desc: 'Expenditure categories & ledger heads' },
-  { slug: 'extra-brief',         label: 'Extra Brief (Evidence)', icon: Scale,   desc: 'Court brief to other advocate with/without ID' },
+// GROUP 1 – CASE MANAGEMENT & OPERATIONS
+export const CASE_OPERATIONS_MODULES = [
+  { slug: 'client-master',                label: 'Client Master',                 icon: UserPlus,         desc: 'Register & edit client details', isMaster: true },
+  { slug: 'case-master',                  label: 'Case Master',                   icon: FolderPlus,       desc: 'Register & manage court cases', isMaster: true },
+  { slug: 'case-next-entry',             label: 'Case Next Entry',               icon: CalendarClock,    desc: 'Next hearing dates & reminders' },
+  { slug: 'client-information',          label: 'Client Information',            icon: Info,             desc: 'Full client profile & ledger view' },
+  { slug: 'waiting-list',                 label: 'Waiting List',                  icon: Hourglass,        desc: 'Clients in chamber queue' },
+  { slug: 'date-wise-reminders',          label: 'Reminder / Hearing Management', icon: BellRing,         desc: 'Cause list reminders & alerts' },
+  { slug: 'case-search-reports',          label: 'Case Search & Reports',         icon: Search,           desc: 'Multi-filter case search & reports' },
+  { slug: 'date-wise-case-search',        label: 'Date-Wise Case Search',         icon: FileSpreadsheet,  desc: 'Court schedule & calendar register' },
+  { slug: 'extra-brief',                  label: 'Extra Brief (Evidence)',        icon: Scale,            desc: 'Court brief to other advocate' },
+  { slug: 'for-wise-case-report',         label: 'For / Purpose Wise Report',     icon: Layers,           desc: 'Case status by hearing purpose' },
+  { slug: 'document-upload',              label: 'Document Upload System',        icon: UploadCloud,      desc: 'ID-wise document upload system' },
+  { slug: 'welcome-screen',               label: 'Reception Welcome Screen',      icon: Sparkles,         desc: 'Client chamber greeting display' },
 ]
 
+// GROUP 2 – ACCOUNTS & FINANCIAL MANAGEMENT
+export const ACCOUNTS_FINANCIAL_MODULES = [
+  { slug: 'client-billing',              label: 'Client Billing',                icon: CreditCard,       desc: 'Record case fee receipts & billing' },
+  { slug: 'client-payment',              label: 'Client Payment',                icon: FileText,         desc: 'Date-wise payment history' },
+  { slug: 'expense',                     label: 'Expense Management',            icon: TrendingDown,     desc: 'Record office & court expenses' },
+  { slug: 'expense-head-master',         label: 'Expense Head Master',           icon: Tags,             desc: 'Expenditure categories & ledger heads' },
+  { slug: 'consultancy-fees',            label: 'Consultancy Fees',              icon: BadgeIndianRupee, desc: 'Consultation entries (No Case ID)' },
+  { slug: 'due-list',                    label: 'Outstanding Chamber Dues',      icon: AlertTriangle,    desc: 'Cases with pending fee balances' },
+  { slug: 'income-expense-report',       label: 'Income & Expense Reports',      icon: ChartPie,         desc: 'Overall financial balance & profit' },
+  { slug: 'client-ledger-report',        label: 'Client Ledger',                 icon: BookOpen,         desc: 'Client statement & fee balance' },
+  { slug: 'daily-collection-report',     label: 'Daily Collection Report',       icon: Receipt,          desc: 'Day-wise case & consultancy collections' },
+  { slug: 'head-wise-expense-report',    label: 'Head Wise Expense Report',      icon: ClipboardList,    desc: 'Categorized expenditure statements' },
+]
+
+export const MASTER_ENTRY = CASE_OPERATIONS_MODULES.slice(0, 2)
 export const DATA_ENTRY = [
-  { slug: 'case-next-entry',    label: 'Case Next Entry',    icon: CalendarClock, desc: 'Next hearing dates & reminders' },
-  { slug: 'client-billing',     label: 'Case Payment Entry', icon: CreditCard,    desc: 'Record case fee receipts & dues' },
-  { slug: 'client-payment',     label: 'Date-Wise Payments', icon: FileText,      desc: 'PDF format date-wise payments' },
-  { slug: 'consultancy-fees',   label: 'Consultancy Fees',   icon: BadgeIndianRupee, desc: 'Consultation entries (No Case ID)' },
-  { slug: 'document-upload',    label: 'Document Upload',    icon: UploadCloud,   desc: 'ID-wise document upload system' },
-  { slug: 'expense',            label: 'Expense Entry',      icon: TrendingDown,  desc: 'Record office & court expenses' },
-  { slug: 'add-waiting-list',   label: 'Add Waiting List',   icon: ListPlus,      desc: 'Clients in chamber queue' },
-  { slug: 'client-information', label: 'Client Profile',     icon: Info,          desc: 'Full client profile & ledger view' },
+  ...CASE_OPERATIONS_MODULES.slice(2, 6),
+  ...ACCOUNTS_FINANCIAL_MODULES.slice(0, 5),
 ]
-
 export const REPORTS = [
-  { slug: 'case-search-reports',          label: 'Case Search & Reports',        icon: Search,        desc: 'Multi-filter case search & reports' },
-  { slug: 'date-wise-case-search',        label: 'Date-Wise Case Search (PDF)',  icon: FileSpreadsheet, desc: 'PDF format date-wise court schedule' },
-  { slug: 'due-list',                     label: 'Outstanding Due List',         icon: AlertTriangle, desc: 'Clients & cases with pending dues' },
-  { slug: 'daily-collection-report',      label: 'Daily Collection Report',      icon: Receipt,       desc: 'Day-wise case & consultancy collections' },
-  { slug: 'date-wise-reminders',          label: 'Date-Wise Reminders (PDF)',    icon: BellRing,      desc: 'Client reminders for Anupam Maity' },
-  { slug: 'head-wise-expense-report',     label: 'Head Wise Expense Report',     icon: ClipboardList, desc: 'Categorized expenditure statements' },
-  { slug: 'client-ledger-report',         label: 'Client Ledger Report',         icon: BookOpen,      desc: 'Client statement & fee balance' },
-  { slug: 'date-wise-case-list-report',   label: 'Hearing Schedule Cause List',  icon: CalendarDays,  desc: 'Court cause list by hearing date' },
-  { slug: 'income-expense-report',        label: 'Income & Expense Statement',   icon: ChartPie,      desc: 'Overall financial balance & profit' },
-  { slug: 'for-wise-case-report',         label: 'For / Purpose Wise Report',    icon: Layers,        desc: 'Case status by hearing purpose' },
-  { slug: 'waiting-list',                 label: 'Waiting List Appointments',    icon: Hourglass,     desc: 'Upcoming client chamber queue' },
-  { slug: 'welcome-screen',               label: 'Reception Welcome Screen',     icon: Sparkles,      desc: 'Client chamber greeting display' },
+  ...CASE_OPERATIONS_MODULES.slice(6),
+  ...ACCOUNTS_FINANCIAL_MODULES.slice(5),
 ]
 
 export const ALL_MODULES = [
-  ...MASTER_ENTRY.map((m) => ({ ...m, group: 'Master Entry' })),
-  ...DATA_ENTRY.map((m) => ({ ...m, group: 'Data Entry' })),
-  ...REPORTS.map((m) => ({ ...m, group: 'Reports' })),
+  ...CASE_OPERATIONS_MODULES.map((m) => ({ ...m, group: 'Case Management & Operations' })),
+  ...ACCOUNTS_FINANCIAL_MODULES.map((m) => ({ ...m, group: 'Accounts & Financial Management' })),
 ]
 
 // Indian number format: 22766902 -> 2,27,66,902

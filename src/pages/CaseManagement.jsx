@@ -42,6 +42,8 @@ export default function CaseManagement() {
       vsName: '',
       idNumber: '',
       tcc: '',
+      briefForRoom: '',
+      regNumber: '',
       purpose: '',
       caseDetails: '',
       totalFees: '',
@@ -133,7 +135,7 @@ export default function CaseManagement() {
     }
     if (!formData.caseNumber.trim()) errs.caseNumber = 'Case Number is required'
     if (!formData.courtName.trim()) errs.courtName = 'Court Name is required'
-    if (!formData.nextDate) errs.nextDate = 'Next hearing date is required'
+    if (!formData.nextDate) errs.nextDate = 'Appearance date is required'
     if (!formData.purpose.trim()) errs.purpose = 'For / Purpose of hearing is required'
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -157,8 +159,10 @@ export default function CaseManagement() {
       vsName: cs.vsName || '',
       idNumber: cs.idNumber || '',
       tcc: cs.tcc || '',
+      briefForRoom: cs.briefForRoom || '',
+      regNumber: cs.regNumber || '',
       purpose: cs.purpose || '',
-      caseDetails: cs.caseDetails || '',
+      caseDetails: cs.caseDetails || cs.notes || '',
       totalFees: cs.totalFees !== undefined ? String(cs.totalFees) : '',
       paidAmount: cs.paidAmount !== undefined ? String(cs.paidAmount) : '',
       dueAmount: Math.max(0, tf - pa),
@@ -166,7 +170,7 @@ export default function CaseManagement() {
       lc: cs.lc || '',
       ppName: cs.ppName || '',
       otherCaseNumber: cs.otherCaseNumber || '',
-      notes: cs.notes || '',
+      notes: cs.notes || cs.caseDetails || '',
     })
     setErrors({})
     showToast('info', `Selected Case ID: ${cs.id} (${cs.caseNumber}) — editing mode`)
@@ -532,37 +536,50 @@ export default function CaseManagement() {
                   </div>
                 </div>
 
-                {/* Row 7: ID Number & T.C.C. (Prominent from PDF) */}
+                {/* Row 7: Total Case Contract (TCC) - ID Number removed */}
+                <div className="form-field">
+                  <label className="field-lbl">Total Case Contract</label>
+                  <input
+                    type="text"
+                    name="tcc"
+                    placeholder="e.g. Total Case Contract reference, TCC-42/26"
+                    className="form-input"
+                    value={formData.tcc}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {/* Row 8: Brief for Room & Reg Number */}
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="field-lbl">ID Number (Chamber / Ref ID)</label>
+                    <label className="field-lbl">Brief for Room</label>
                     <input
                       type="text"
-                      name="idNumber"
-                      placeholder="e.g. ID-101, ID-402"
+                      name="briefForRoom"
+                      placeholder="Enter Brief for Room"
                       className="form-input"
-                      value={formData.idNumber}
+                      value={formData.briefForRoom}
                       onChange={handleChange}
                     />
                   </div>
 
                   <div className="form-field">
-                    <label className="field-lbl">T.C.C. (Trial Court Case)</label>
+                    <label className="field-lbl">Reg Number</label>
                     <input
                       type="text"
-                      name="tcc"
-                      placeholder="e.g. TCC-42/26, TCC-55/26"
+                      name="regNumber"
+                      placeholder="Enter Reg Number"
                       className="form-input"
-                      value={formData.tcc}
+                      value={formData.regNumber}
                       onChange={handleChange}
                     />
                   </div>
                 </div>
 
-                {/* Row 8: Next Date & Hearing Purpose */}
+                {/* Row 9: Appearance Date (Renamed from Case Next Date) & Hearing Purpose */}
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="field-lbl">Case Next Date <span className="req">*</span></label>
+                    <label className="field-lbl">Appearance Date <span className="req">*</span></label>
                     <div className="input-with-icon">
                       <Calendar size={14} className="input-ic" />
                       <input
@@ -593,58 +610,19 @@ export default function CaseManagement() {
                   </div>
                 </div>
 
-                {/* ================= ACCOUNT / PAYMENT DETAILS ================= */}
-                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#475569', marginBottom: '8px' }}>
-                    Account &amp; Payment Details
-                  </div>
-                  <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                    <div className="form-field">
-                      <label className="field-lbl">Total Case Fees (₹)</label>
-                      <input
-                        type="number"
-                        name="totalFees"
-                        placeholder="e.g. 25000"
-                        className="form-input"
-                        value={formData.totalFees}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="field-lbl">Paid Amount (₹)</label>
-                      <input
-                        type="number"
-                        name="paidAmount"
-                        placeholder="e.g. 15000"
-                        className="form-input"
-                        value={formData.paidAmount}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label className="field-lbl">Due Amount (₹)</label>
-                      <input
-                        type="number"
-                        name="dueAmount"
-                        className="form-input readonly-input"
-                        value={formData.dueAmount !== '' ? formData.dueAmount : Math.max(0, Number(formData.totalFees || 0) - Number(formData.paidAmount || 0))}
-                        readOnly
-                        style={{ color: Number(formData.dueAmount || 0) > 0 ? '#dc2626' : '#16a34a', fontWeight: '700' }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 10: Case Details / Notes */}
+                {/* Row 10: Single Remarks Field (Account & Payment Details section removed) */}
                 <div className="form-field">
-                  <label className="field-lbl">Case Details &amp; Chamber Remarks</label>
+                  <label className="field-lbl">Remarks</label>
                   <textarea
-                    name="caseDetails"
-                    rows={2}
-                    placeholder="Enter stage notes, witness details, document custody records..."
+                    name="notes"
+                    rows={3}
+                    placeholder="Enter stage remarks, custody notes, witness details or legal instructions..."
                     className="form-input form-textarea"
-                    value={formData.caseDetails}
-                    onChange={handleChange}
+                    value={formData.notes}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setFormData((prev) => ({ ...prev, notes: val, caseDetails: val }))
+                    }}
                   />
                 </div>
 
@@ -745,8 +723,8 @@ export default function CaseManagement() {
                       <th style={{ width: '80px' }}>CASE ID</th>
                       <th>CASE NUMBER &amp; COURT</th>
                       <th>CLIENT NAME</th>
-                      <th style={{ width: '85px' }}>T.C.C / ID</th>
-                      <th style={{ width: '90px' }}>NEXT DATE</th>
+                      <th style={{ width: '120px' }}>TOTAL CASE CONTRACT</th>
+                      <th style={{ width: '100px' }}>APPEARANCE DATE</th>
                       <th style={{ width: '80px' }}>DUE (₹)</th>
                       <th style={{ width: '75px' }}>ACTIONS</th>
                     </tr>
@@ -790,7 +768,8 @@ export default function CaseManagement() {
                             <td>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '11px', fontWeight: '600', color: '#0f172a' }}>{cs.tcc || '—'}</span>
-                                {cs.idNumber && <small style={{ fontSize: '10px', color: '#64748b' }}>{cs.idNumber}</small>}
+                                {cs.regNumber && <small style={{ fontSize: '10px', color: '#64748b' }}>Reg: {cs.regNumber}</small>}
+                                {cs.briefForRoom && <small style={{ fontSize: '10px', color: '#64748b' }}>Room: {cs.briefForRoom}</small>}
                               </div>
                             </td>
                             <td>
@@ -868,12 +847,19 @@ export default function CaseManagement() {
                   </div>
                   <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                     <div><b>V.S. Name:</b> {viewModalCase.vsName || '—'}</div>
-                    <div><b>T.C.C:</b> {viewModalCase.tcc || '—'}</div>
-                    <div><b>ID Number:</b> {viewModalCase.idNumber || '—'}</div>
-                    <div><b>Next Hearing Date:</b> <span style={{ color: '#7c3aed', fontWeight: '700' }}>{viewModalCase.nextDate}</span></div>
+                    <div><b>Total Case Contract:</b> {viewModalCase.tcc || '—'}</div>
+                    <div><b>Brief for Room:</b> {viewModalCase.briefForRoom || '—'}</div>
+                    <div><b>Reg Number:</b> {viewModalCase.regNumber || '—'}</div>
+                    <div><b>Appearance Date:</b> <span style={{ color: '#7c3aed', fontWeight: '700' }}>{viewModalCase.nextDate}</span></div>
                     <div><b>Purpose:</b> {viewModalCase.purpose || '—'}</div>
                   </div>
                 </div>
+
+                {viewModalCase.notes && (
+                  <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '12px', fontSize: '13px' }}>
+                    <b>Remarks:</b> <span style={{ color: '#334155' }}>{viewModalCase.notes}</span>
+                  </div>
+                )}
 
                 {/* Financial Summary */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '10px 0' }}>
@@ -1011,20 +997,26 @@ export default function CaseManagement() {
                     <td>{selectedCase.policeStation || '—'} / {selectedCase.psCaseNumber || '—'}</td>
                   </tr>
                   <tr>
-                    <th>Next Hearing Date:</th>
+                    <th>Appearance Date:</th>
                     <td><strong style={{ fontSize: '13px' }}>{selectedCase.nextDate}</strong></td>
                     <th>For / Hearing Purpose:</th>
                     <td><strong>{selectedCase.purpose}</strong></td>
                   </tr>
                   <tr>
-                    <th>Total Case Fees:</th>
-                    <td>₹{Number(selectedCase.totalFees || 0).toLocaleString('en-IN')}</td>
+                    <th>Brief for Room:</th>
+                    <td>{selectedCase.briefForRoom || '—'}</td>
+                    <th>Reg Number:</th>
+                    <td>{selectedCase.regNumber || '—'}</td>
+                  </tr>
+                  <tr>
+                    <th>Total Case Contract:</th>
+                    <td>{selectedCase.tcc || '—'}</td>
                     <th>Fee Status:</th>
                     <td>Paid: ₹{Number(selectedCase.paidAmount || 0).toLocaleString('en-IN')} | Due: ₹{Number(selectedCase.dueAmount || 0).toLocaleString('en-IN')}</td>
                   </tr>
                   <tr>
-                    <th>Case Brief &amp; Notes:</th>
-                    <td colSpan={3}>{selectedCase.caseDetails || selectedCase.notes || 'Routine court proceeding scheduled.'}</td>
+                    <th>Remarks:</th>
+                    <td colSpan={3}>{selectedCase.notes || selectedCase.caseDetails || 'Routine court proceeding scheduled.'}</td>
                   </tr>
                 </tbody>
               </table>

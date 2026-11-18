@@ -23,8 +23,8 @@ export default function WaitingList() {
 
   const initialForm = {
     clientName: '',
+    address: '',
     phone: '',
-    purpose: '',
     date: new Date().toISOString().split('T')[0],
     timeSlot: '11:00 AM',
     status: 'Waiting',
@@ -55,6 +55,7 @@ export default function WaitingList() {
         ...p,
         clientName: c.name,
         phone: c.phone || '',
+        address: c.address || '',
       }))
     }
   }
@@ -69,8 +70,8 @@ export default function WaitingList() {
     setEditingItem(item)
     setFormData({
       clientName: item.clientName || '',
+      address: item.address || item.purpose || '',
       phone: item.phone || '',
-      purpose: item.purpose || '',
       date: item.date || '',
       timeSlot: item.timeSlot || '11:00 AM',
       status: item.status || 'Waiting',
@@ -81,18 +82,22 @@ export default function WaitingList() {
 
   const handleSave = (e) => {
     e.preventDefault()
-    if (!formData.clientName.trim() || !formData.purpose.trim()) {
-      showToast('error', 'Client Name and Consultation Purpose required.')
+    if (!formData.clientName.trim()) {
+      showToast('error', 'Client Name is required.')
       return
     }
 
     try {
+      const payload = {
+        ...formData,
+        purpose: formData.address, // backward compatibility
+      }
       if (editingItem) {
-        updateWaitingListEntry(editingItem.id, formData)
-        showToast('success', `Updated appointment for ${formData.clientName}!`)
+        updateWaitingListEntry(editingItem.id, payload)
+        showToast('success', `Updated entry for ${formData.clientName}!`)
       } else {
-        saveWaitingListEntry(formData)
-        showToast('success', `Added ${formData.clientName} to Chamber Waiting Queue!`)
+        saveWaitingListEntry(payload)
+        showToast('success', `Added ${formData.clientName} to Waiting List!`)
       }
       setShowModal(false)
     } catch (err) {
@@ -117,6 +122,7 @@ export default function WaitingList() {
     return (
       (w.clientName && w.clientName.toLowerCase().includes(q)) ||
       (w.phone && w.phone.includes(q)) ||
+      (w.address && w.address.toLowerCase().includes(q)) ||
       (w.purpose && w.purpose.toLowerCase().includes(q)) ||
       (w.status && w.status.toLowerCase().includes(q))
     )
@@ -179,7 +185,7 @@ export default function WaitingList() {
               <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input
                 type="text"
-                placeholder="Search waiting client name, mobile, purpose, or status..."
+                placeholder="Search waiting client name, mobile, address, or status..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="form-input"
@@ -202,11 +208,11 @@ export default function WaitingList() {
               <table className="mgmt-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '80px' }}>QUEUE ID</th>
-                    <th>CLIENT NAME &amp; PHONE</th>
-                    <th style={{ width: '95px' }}>DATE</th>
-                    <th style={{ width: '100px' }}>TIME SLOT</th>
-                    <th>PURPOSE OF VISIT</th>
+                    <th style={{ width: '65px' }}>SL NO.</th>
+                    <th>CLIENT NAME</th>
+                    <th>ADDRESS</th>
+                    <th style={{ width: '130px' }}>MOBILE NUMBER</th>
+                    <th style={{ width: '150px' }}>DATE / TIME SLOT</th>
                     <th style={{ width: '130px' }}>STATUS</th>
                     <th style={{ width: '80px', textAlign: 'center' }}>ACTIONS</th>
                   </tr>
@@ -220,20 +226,31 @@ export default function WaitingList() {
                       </td>
                     </tr>
                   ) : (
-                    filteredList.map((w) => (
+                    filteredList.map((w, idx) => (
                       <tr key={w.id}>
-                        <td><span className="id-pill" style={{ background: '#fef3c7', color: '#b45309' }}>{w.id}</span></td>
+                        <td>
+                          <span className="sl-badge" style={{ fontWeight: '700', color: '#475569', fontSize: '12px' }}>
+                            {idx + 1}
+                          </span>
+                        </td>
                         <td>
                           <strong className="primary-text">{w.clientName}</strong>
-                          <small className="muted-subtext">{w.phone}</small>
-                        </td>
-                        <td><span className="cell-date">{w.date}</span></td>
-                        <td>
-                          <span style={{ fontSize: '11px', fontWeight: '700', color: '#0f172a' }}>{w.timeSlot}</span>
                         </td>
                         <td>
-                          <span style={{ fontSize: '12px', color: '#334155' }}>{w.purpose}</span>
-                          {w.notes && <small className="muted-subtext">{w.notes}</small>}
+                          <span style={{ fontSize: '12px', color: '#334155', whiteSpace: 'pre-line' }}>
+                            {w.address || w.purpose || '—'}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
+                            {w.phone || '—'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span className="cell-date">{w.date}</span>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#0f172a' }}>{w.timeSlot}</span>
+                          </div>
                         </td>
                         <td>
                           <select
@@ -319,14 +336,26 @@ export default function WaitingList() {
                     />
                   </div>
 
+                  <div className="form-field" style={{ marginBottom: '10px' }}>
+                    <label className="field-lbl">Address</label>
+                    <textarea
+                      rows={2}
+                      className="form-input form-textarea"
+                      value={formData.address}
+                      onChange={(e) => setFormData((p) => ({ ...p, address: e.target.value }))}
+                      placeholder="Enter client residential / chamber address..."
+                    />
+                  </div>
+
                   <div className="form-row-2" style={{ marginBottom: '10px' }}>
                     <div className="form-field">
-                      <label className="field-lbl">Phone Number</label>
+                      <label className="field-lbl">Mobile Number</label>
                       <input
                         type="tel"
                         className="form-input"
                         value={formData.phone}
                         onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+                        placeholder="e.g. +91 98765 43210"
                       />
                     </div>
                     <div className="form-field">
@@ -341,7 +370,7 @@ export default function WaitingList() {
                     </div>
                   </div>
 
-                  <div className="form-row-2" style={{ marginBottom: '10px' }}>
+                  <div className="form-row-2" style={{ marginBottom: '14px' }}>
                     <div className="form-field">
                       <label className="field-lbl">Time Slot</label>
                       <input
@@ -365,18 +394,6 @@ export default function WaitingList() {
                         <option value="Cancelled">Cancelled</option>
                       </select>
                     </div>
-                  </div>
-
-                  <div className="form-field" style={{ marginBottom: '14px' }}>
-                    <label className="field-lbl">Purpose of Visit <span className="req">*</span></label>
-                    <textarea
-                      rows={2}
-                      className="form-input form-textarea"
-                      value={formData.purpose}
-                      onChange={(e) => setFormData((p) => ({ ...p, purpose: e.target.value }))}
-                      placeholder="e.g. Bail consultation, land injunction urgent advice..."
-                      required
-                    />
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>

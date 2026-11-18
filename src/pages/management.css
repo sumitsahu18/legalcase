@@ -866,10 +866,21 @@
    RESPONSIVE PATCH — Client / Case management
    ===================================================================== */
 
-/* Table: columns dabne ki jagah andar horizontal scroll */
+/* Table: columns dabne ki jagah andar horizontal scroll (except fluid tables) */
 @media (max-width: 1280px) {
-  .mgmt-table th, .mgmt-table td { white-space: nowrap; }
-  .mgmt-table td .client-name-cell, .mgmt-table td .muted-subtext { white-space: nowrap; }
+  .mgmt-table:not(.table-fluid) th, .mgmt-table:not(.table-fluid) td { white-space: nowrap; }
+  .mgmt-table:not(.table-fluid) td .client-name-cell, .mgmt-table:not(.table-fluid) td .muted-subtext { white-space: nowrap; }
+}
+
+.table-fluid {
+  width: 100%;
+  table-layout: auto;
+}
+.table-fluid th, .table-fluid td {
+  white-space: normal !important;
+}
+.table-fluid th.nowrap-col, .table-fluid td.nowrap-col {
+  white-space: nowrap !important;
 }
 
 @media (max-width: 900px) {

@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle, Search, Printer, Download, CreditCard, ArrowLeft,
   ChevronRight, Calendar, IndianRupee, Phone, CheckCircle2, User,
-  Building2, Hash, ArrowUpRight
+  Building2, Hash, ArrowUpRight, Trash2
 } from 'lucide-react'
 import Topbar from '../components/Topbar.jsx'
 import { OFFICE } from '../data/menu.js'
 import {
-  getDueList, getPaymentsByCaseId, savePayment, onStorageUpdate
+  getDueList, getPaymentsByCaseId, savePayment, clearCaseDue, onStorageUpdate
 } from '../services/storageService.js'
 import './management.css'
 
@@ -94,6 +94,18 @@ export default function DueList() {
       setPayModalCase(null)
     } catch (err) {
       showToast('error', err.message || 'Payment collection failed.')
+    }
+  }
+
+  const handleDeleteDue = (cs) => {
+    if (window.confirm(`Are you sure you want to remove the outstanding due of ₹${Number(cs.dueAmount || 0).toLocaleString('en-IN')} for Case "${cs.caseNumber}" (${cs.clientName}) from the due list? This will settle the pending balance without deleting the case docket.`)) {
+      try {
+        clearCaseDue(cs.id)
+        showToast('success', `Outstanding due removed for Case ${cs.caseNumber}.`)
+        setDueCases(getDueList())
+      } catch (err) {
+        showToast('error', err.message || 'Failed to remove due entry.')
+      }
     }
   }
 
@@ -271,7 +283,7 @@ export default function DueList() {
                     <th style={{ width: '95px' }}>PAID (₹)</th>
                     <th style={{ width: '100px' }}>DUE (₹)</th>
                     <th style={{ width: '95px' }}>NEXT DATE</th>
-                    <th style={{ width: '130px', textAlign: 'center' }}>QUICK ACTION</th>
+                    <th style={{ width: '150px', textAlign: 'center' }}>QUICK ACTION</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -322,16 +334,27 @@ export default function DueList() {
                           </div>
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            style={{ padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            onClick={() => handleOpenPayModal(cs)}
-                            title="Record Payment Receipt for this Case"
-                          >
-                            <CreditCard size={12} />
-                            <span>Receive Fee</span>
-                          </button>
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="btn-primary"
+                              style={{ padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              onClick={() => handleOpenPayModal(cs)}
+                              title="Record Payment Receipt for this Case"
+                            >
+                              <CreditCard size={12} />
+                              <span>Receive Fee</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-icon-subtle"
+                              style={{ padding: '5px 7px', border: '1px solid #fecaca', background: '#fff1f2', cursor: 'pointer', borderRadius: '4px' }}
+                              onClick={() => handleDeleteDue(cs)}
+                              title="Remove from Outstanding Due List"
+                            >
+                              <Trash2 size={13} color="#dc2626" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -410,11 +433,30 @@ export default function DueList() {
                     />
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                    <button type="button" className="btn-secondary" onClick={() => setPayModalCase(null)}>Cancel</button>
-                    <button type="submit" className="btn-primary" style={{ background: '#16a34a', borderColor: '#15803d' }}>
-                      Save &amp; Update Due
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ color: '#dc2626', borderColor: '#fca5a5', background: '#fef2f2', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to remove the outstanding due of ₹${Number(payModalCase.dueAmount || 0).toLocaleString('en-IN')} for Case "${payModalCase.caseNumber}" (${payModalCase.clientName}) from the due list?`)) {
+                          clearCaseDue(payModalCase.id)
+                          showToast('success', `Outstanding due removed for Case ${payModalCase.caseNumber}.`)
+                          setDueCases(getDueList())
+                          setPayModalCase(null)
+                        }
+                      }}
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete from Due List</span>
                     </button>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button type="button" className="btn-secondary" onClick={() => setPayModalCase(null)}>Cancel</button>
+                      <button type="submit" className="btn-primary" style={{ background: '#16a34a', borderColor: '#15803d' }}>
+                        Save &amp; Update Due
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
