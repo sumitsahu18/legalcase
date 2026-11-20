@@ -19,6 +19,8 @@ export default function ClientManagement() {
   const [clients, setClients] = useState(() => getClients())
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
+  const [formClientSearch, setFormClientSearch] = useState('')
+  const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [toast, setToast] = useState(null)
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -143,13 +145,6 @@ export default function ClientManagement() {
     }
     if (formData.extraPhone && !/^\d{10}$/.test(formData.extraPhone.replace(/[\s-+]/g, ''))) {
       errs.extraPhone = 'Enter valid 10-digit other phone number'
-    }
-    if (formData.referencePhones && formData.referencePhones.length > 0) {
-      formData.referencePhones.forEach((p, idx) => {
-        if (p && !/^\d{10}$/.test(p.replace(/[\s-+]/g, ''))) {
-          errs[`refPhone_${idx}`] = 'Enter valid 10-digit reference phone'
-        }
-      })
     }
     if (formData.otherReferences && formData.otherReferences.length > 0) {
       formData.otherReferences.forEach((r, idx) => {
@@ -452,10 +447,124 @@ export default function ClientManagement() {
                   <span className="pch-dot pch-blue" />
                   <h3>{selectedId ? `Edit Client (${selectedId})` : 'New Client Registration Form'}</h3>
                 </div>
-                {selectedId ? (
-                  <span className="status-badge editing">Editing Record</span>
-                ) : (
-                  <span className="status-badge creating">New Registration</span>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {selectedId ? (
+                    <>
+                      <span className="status-badge editing">Editing {selectedId}</span>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ padding: '3px 8px', fontSize: '11px' }}
+                        onClick={handleClear}
+                        title="Clear and start new registration"
+                      >
+                        + New Registration
+                      </button>
+                    </>
+                  ) : (
+                    <span className="status-badge creating">New Registration</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Searchable Client Search Facility inside Form */}
+              <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', position: 'relative' }}>
+                <label className="field-lbl" style={{ marginBottom: '4px', fontWeight: '700', color: '#1e293b' }}>
+                  Search Registered Client (Load for Editing)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input
+                    type="text"
+                    placeholder="Search by Client ID (e.g. CL-1001) or Client Name..."
+                    value={formClientSearch}
+                    onChange={(e) => {
+                      setFormClientSearch(e.target.value)
+                      setShowClientDropdown(true)
+                    }}
+                    onFocus={() => setShowClientDropdown(true)}
+                    className="form-input"
+                    style={{ paddingLeft: '32px', fontSize: '12px' }}
+                  />
+                  {formClientSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormClientSearch('')
+                        setShowClientDropdown(false)
+                      }}
+                      style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Dropdown Results */}
+                {showClientDropdown && formClientSearch.trim() && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '14px',
+                      right: '14px',
+                      top: '100%',
+                      zIndex: 30,
+                      background: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                      maxHeight: '220px',
+                      overflowY: 'auto',
+                      marginTop: '4px',
+                    }}
+                  >
+                    {clients.filter(
+                      (c) =>
+                        c.id.toLowerCase().includes(formClientSearch.toLowerCase()) ||
+                        c.name.toLowerCase().includes(formClientSearch.toLowerCase()) ||
+                        (c.phone && c.phone.includes(formClientSearch))
+                    ).length === 0 ? (
+                      <div style={{ padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>
+                        No registered client found for "{formClientSearch}".
+                      </div>
+                    ) : (
+                      clients
+                        .filter(
+                          (c) =>
+                            c.id.toLowerCase().includes(formClientSearch.toLowerCase()) ||
+                            c.name.toLowerCase().includes(formClientSearch.toLowerCase()) ||
+                            (c.phone && c.phone.includes(formClientSearch))
+                        )
+                        .map((c) => (
+                          <div
+                            key={c.id}
+                            onClick={() => {
+                              handleSelectClient(c)
+                              setFormClientSearch('')
+                              setShowClientDropdown(false)
+                              showToast('info', `Loaded ${c.id} (${c.name}) for editing.`)
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              borderBottom: '1px solid #f1f5f9',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              fontSize: '12px',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                          >
+                            <div>
+                              <strong style={{ color: '#0f172a' }}>{c.name}</strong>
+                              <span style={{ marginLeft: '8px', color: '#64748b', fontSize: '11px' }}>{c.phone}</span>
+                            </div>
+                            <span className="id-pill" style={{ background: '#eff6ff', color: '#1d4ed8' }}>{c.id}</span>
+                          </div>
+                        ))
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -569,81 +678,7 @@ export default function ClientManagement() {
                   </div>
                 </div>
 
-                {/* Multiple Reference Phone Numbers */}
-                <div className="form-field" style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <label className="field-lbl" style={{ margin: 0, fontWeight: '700' }}>Reference Phone Number(s)</label>
-                    <button
-                      type="button"
-                      onClick={handleAddRefPhone}
-                      className="btn-secondary"
-                      style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' }}
-                    >
-                      <Plus size={12} />
-                      <span>Add Another Number (+)</span>
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {(formData.referencePhones || ['']).map((refPhone, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <div className="input-with-icon" style={{ flex: 1 }}>
-                          <Phone size={14} className="input-ic" />
-                          <input
-                            type="tel"
-                            placeholder={`Reference Phone #${idx + 1}`}
-                            maxLength={10}
-                            className={`form-input ${errors[`refPhone_${idx}`] ? 'input-err' : ''}`}
-                            value={refPhone}
-                            onChange={(e) => handleRefPhoneChange(idx, e.target.value)}
-                          />
-                        </div>
-                        {(formData.referencePhones || []).length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveRefPhone(idx)}
-                            className="btn-icon-subtle"
-                            style={{ padding: '6px 8px', border: '1px solid #fecaca', background: '#fff1f2', cursor: 'pointer', borderRadius: '4px', color: '#dc2626' }}
-                            title="Remove this reference number"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {Object.keys(errors).some(k => k.startsWith('refPhone_')) && (
-                    <span className="err-msg" style={{ display: 'block', marginTop: '4px' }}>
-                      Please enter valid 10-digit numbers for all reference phone entries.
-                    </span>
-                  )}
-                </div>
-
-                {/* Client Classification & Engagement: Only Option 1 remains (options 2, 3, 4 removed) */}
-                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#475569', marginBottom: '8px' }}>
-                    Client Classification &amp; Engagement
-                  </div>
-                  <div className="form-field">
-                    <label className="field-lbl">Client Category / Branch</label>
-                    <select
-                      name="clientCategory"
-                      className="form-input form-select"
-                      value={formData.clientCategory}
-                      onChange={handleChange}
-                    >
-                      <option value="Civil">Civil Litigation</option>
-                      <option value="Criminal">Criminal Defense / Bail</option>
-                      <option value="Revenue">Revenue &amp; Land Laws</option>
-                      <option value="Family / Matrimonial">Family / Matrimonial</option>
-                      <option value="Corporate">Corporate &amp; Commercial</option>
-                      <option value="Writ / Constitutional">High Court Writ</option>
-                      <option value="Consumer / Labor">Consumer / Labor Dispute</option>
-                      <option value="Other">Other Legal Matter</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Other Person's Reference Section (Add Multiple, Remove Individual) */}
+                {/* Other Person's Reference Section: REPOSITIONED ABOVE CLIENT CLASSIFICATION */}
                 <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#475569' }}>
@@ -704,32 +739,28 @@ export default function ClientManagement() {
                   )}
                 </div>
 
-                {/* Agreed Retainer Fees & Client Remarks / Case Notes */}
-                <div className="form-row-2">
-                  <div className="form-field">
-                    <label className="field-lbl">Agreed Retainer Fees (₹)</label>
-                    <div className="input-with-icon">
-                      <IndianRupee size={14} className="input-ic" />
-                      <input
-                        type="number"
-                        name="fees"
-                        placeholder="Agreed consultation fees"
-                        className="form-input"
-                        value={formData.fees}
-                        onChange={handleChange}
-                      />
-                    </div>
+                {/* Client Classification & Engagement: Only Option 1 remains (options 2, 3, 4 removed) */}
+                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', margin: '4px 0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#475569', marginBottom: '8px' }}>
+                    Client Classification &amp; Engagement
                   </div>
                   <div className="form-field">
-                    <label className="field-lbl">Client Remarks / Case Notes</label>
-                    <input
-                      type="text"
-                      name="notes"
-                      placeholder="Special instructions, custody notes, etc."
-                      className="form-input"
-                      value={formData.notes}
+                    <label className="field-lbl">Client Category / Branch</label>
+                    <select
+                      name="clientCategory"
+                      className="form-input form-select"
+                      value={formData.clientCategory}
                       onChange={handleChange}
-                    />
+                    >
+                      <option value="Civil">Civil Litigation</option>
+                      <option value="Criminal">Criminal Defense / Bail</option>
+                      <option value="Revenue">Revenue &amp; Land Laws</option>
+                      <option value="Family / Matrimonial">Family / Matrimonial</option>
+                      <option value="Corporate">Corporate &amp; Commercial</option>
+                      <option value="Writ / Constitutional">High Court Writ</option>
+                      <option value="Consumer / Labor">Consumer / Labor Dispute</option>
+                      <option value="Other">Other Legal Matter</option>
+                    </select>
                   </div>
                 </div>
 

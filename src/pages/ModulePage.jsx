@@ -43,11 +43,14 @@ export default function ModulePage() {
     return <CaseSearchReports />
   }
 
-  // Module 4: Payment Management & Date-Wise Payments
+  // Module 4: Payment Management & Client Billing
   if (slug === 'client-billing') {
-    return <PaymentManagement initialTab="entry" />
+    return <PaymentManagement initialTab="billing" />
   }
   if (slug === 'client-payment') {
+    return <PaymentManagement initialTab="payments" />
+  }
+  if (slug === 'date-wise-payments') {
     return <PaymentManagement initialTab="date-wise" />
   }
 

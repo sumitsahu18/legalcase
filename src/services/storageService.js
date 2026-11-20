@@ -9,6 +9,8 @@ const STORAGE_PREFIX = 'legalcase_'
 const CLIENTS_KEY = `${STORAGE_PREFIX}clients_data_v2`
 const CASES_KEY = `${STORAGE_PREFIX}cases_data_v2`
 const PAYMENTS_KEY = `${STORAGE_PREFIX}payments_data_v2`
+const BILLS_KEY = `${STORAGE_PREFIX}bills_data_v2`
+const APPEARANCES_KEY = `${STORAGE_PREFIX}appearances_data_v2`
 const EXPENSE_HEADS_KEY = `${STORAGE_PREFIX}expense_heads_v2`
 const EXPENSES_KEY = `${STORAGE_PREFIX}expenses_data_v2`
 const CONSULTANCY_KEY = `${STORAGE_PREFIX}consultancy_fees_v2`
@@ -381,12 +383,225 @@ const SEED_CASES = [
   },
 ]
 
-const SEED_PAYMENTS = [
+const SEED_BILLS = [
   {
-    id: 'PM-3001',
+    id: 'BL-1001',
+    billNumber: 'BILL-1001',
     caseId: 'CS-2001',
     clientId: 'CL-1001',
     clientName: 'Rajesh Kumar Sharma',
+    phone: '9832104512',
+    caseNumber: 'CR/342/2026',
+    courtName: 'ACJM Court, Contai',
+    billDate: '2026-08-14',
+    description: 'Sessions case defense retainer & evidence representation',
+    contractAmount: 15000,
+    additionalCharges: 0,
+    discount: 0,
+    totalAmount: 15000,
+    paidAmount: 12000,
+    dueAmount: 3000,
+    remarks: 'Retainer fee contract for CR/342/2026',
+    createdAt: '2026-08-14T10:45:00.000Z',
+  },
+  {
+    id: 'BL-1002',
+    billNumber: 'BILL-1002',
+    caseId: 'CS-2002',
+    clientId: 'CL-1002',
+    clientName: 'Sunita Devi Adhikari',
+    phone: '9733481290',
+    caseNumber: 'TS/108/2026',
+    courtName: 'Civil Judge (Sr. Div), Contai',
+    billDate: '2026-09-02',
+    description: 'Title Suit injunction drafting & hearing contract',
+    contractAmount: 25000,
+    additionalCharges: 0,
+    discount: 0,
+    totalAmount: 25000,
+    paidAmount: 15000,
+    dueAmount: 10000,
+    remarks: 'Civil injunction stage fee',
+    createdAt: '2026-09-02T11:30:00.000Z',
+  },
+  {
+    id: 'BL-1003',
+    billNumber: 'BILL-1003',
+    caseId: 'CS-2003',
+    clientId: 'CL-1003',
+    clientName: 'Debashis Roy Chowdhury',
+    phone: '8918234190',
+    caseNumber: 'BL/89/2026',
+    courtName: 'Sessions Court, Medinipur',
+    billDate: '2026-09-18',
+    description: 'Anticipatory bail petition filing & Senior Brief fee',
+    contractAmount: 30000,
+    additionalCharges: 0,
+    discount: 0,
+    totalAmount: 30000,
+    paidAmount: 20000,
+    dueAmount: 10000,
+    remarks: 'Anticipatory bail contract agreed lump sum',
+    createdAt: '2026-09-18T14:30:00.000Z',
+  },
+  {
+    id: 'BL-1004',
+    billNumber: 'BILL-1004',
+    caseId: 'CS-2004',
+    clientId: 'CL-1001',
+    clientName: 'Rajesh Kumar Sharma',
+    phone: '9832104512',
+    caseNumber: 'MISC/44/2026',
+    courtName: 'Sub-Divisional Magistrate Court, Contai',
+    billDate: '2026-09-25',
+    description: 'SDM court certified deeds production & hearing',
+    contractAmount: 10000,
+    additionalCharges: 0,
+    discount: 0,
+    totalAmount: 10000,
+    paidAmount: 6000,
+    dueAmount: 4000,
+    remarks: 'Record rectification contract fee',
+    createdAt: '2026-09-25T10:15:00.000Z',
+  },
+  {
+    id: 'BL-1005',
+    billNumber: 'BILL-1005',
+    caseId: 'CS-2005',
+    clientId: 'CL-1004',
+    clientName: 'Manas Ranjan Giri',
+    phone: '9434810293',
+    caseNumber: 'EX/19/2026',
+    courtName: 'Civil Judge (Jr. Div), Contai',
+    billDate: '2026-10-05',
+    description: 'Money decree execution petition & attachment',
+    contractAmount: 12000,
+    additionalCharges: 0,
+    discount: 0,
+    totalAmount: 12000,
+    paidAmount: 8000,
+    dueAmount: 4000,
+    remarks: 'Execution case contract fee',
+    createdAt: '2026-10-05T10:45:00.000Z',
+  },
+  {
+    id: 'BL-1006',
+    billNumber: 'BILL-1006',
+    caseId: 'CS-2006',
+    clientId: 'CL-1005',
+    clientName: 'Priyanka Mukherjee',
+    phone: '9831920381',
+    caseNumber: 'MAT/52/2026',
+    courtName: 'District Family Court, Medinipur',
+    billDate: '2026-10-22',
+    description: 'Maintenance petition Sec 125 CrPC & conciliation',
+    contractAmount: 18000,
+    additionalCharges: 0,
+    discount: 0,
+    totalAmount: 18000,
+    paidAmount: 18000,
+    dueAmount: 0,
+    remarks: 'Family court matter full settlement',
+    createdAt: '2026-10-22T16:15:00.000Z',
+  },
+]
+
+const SEED_APPEARANCES = [
+  {
+    id: 'APP-1001',
+    caseId: 'CS-2001',
+    clientId: 'CL-1001',
+    clientName: 'Rajesh Kumar Sharma',
+    phone: '9832104512',
+    caseNumber: 'CR/342/2026',
+    courtName: 'ACJM Court, Contai',
+    appearanceDate: '2026-11-20',
+    purpose: 'Evidence / Cross Examination of PW-3',
+    ppName: 'Mr. S. K. Bera (APP)',
+    otherCaseNumber: 'Ramnagar PS Case No. 84/2025',
+    createdAt: '2026-08-14T11:00:00.000Z',
+  },
+  {
+    id: 'APP-1002',
+    caseId: 'CS-2002',
+    clientId: 'CL-1002',
+    clientName: 'Sunita Devi Adhikari',
+    phone: '9733481290',
+    caseNumber: 'TS/108/2026',
+    courtName: 'Civil Judge (Sr. Div), Contai',
+    appearanceDate: '2026-11-25',
+    purpose: 'Hearing on Injunction Application under Order 39',
+    ppName: 'Adv. Amit Roy (Opp. Counsel)',
+    otherCaseNumber: 'Title Suit Registration No. 492',
+    createdAt: '2026-09-02T12:00:00.000Z',
+  },
+  {
+    id: 'APP-1003',
+    caseId: 'CS-2003',
+    clientId: 'CL-1003',
+    clientName: 'Debashis Roy Chowdhury',
+    phone: '8918234190',
+    caseNumber: 'BL/89/2026',
+    courtName: 'Sessions Court, Medinipur',
+    appearanceDate: '2026-11-18',
+    purpose: 'Anticipatory Bail Hearing before Sessions Judge',
+    ppName: 'Public Prosecutor, Medinipur East',
+    otherCaseNumber: 'Digha Coastal PS GR-1204/25',
+    createdAt: '2026-09-18T15:00:00.000Z',
+  },
+  {
+    id: 'APP-1004',
+    caseId: 'CS-2004',
+    clientId: 'CL-1001',
+    clientName: 'Rajesh Kumar Sharma',
+    phone: '9832104512',
+    caseNumber: 'MISC/44/2026',
+    courtName: 'Sub-Divisional Magistrate Court, Contai',
+    appearanceDate: '2026-12-02',
+    purpose: 'Production of Certified Deeds & site report',
+    ppName: 'State Represented by BL&LRO',
+    otherCaseNumber: 'LR Record Rectification Case 14',
+    createdAt: '2026-09-25T10:00:00.000Z',
+  },
+  {
+    id: 'APP-1005',
+    caseId: 'CS-2005',
+    clientId: 'CL-1004',
+    clientName: 'Manas Ranjan Giri',
+    phone: '9434810293',
+    caseNumber: 'EX/19/2026',
+    courtName: 'Civil Judge (Jr. Div), Contai',
+    appearanceDate: '2026-11-28',
+    purpose: 'Execution of Money Decree & Attachment',
+    ppName: 'Adv. P. K. Das (Decree Holder)',
+    otherCaseNumber: 'Execution Case No. 19/2026',
+    createdAt: '2026-10-05T10:30:00.000Z',
+  },
+  {
+    id: 'APP-1006',
+    caseId: 'CS-2006',
+    clientId: 'CL-1005',
+    clientName: 'Priyanka Mukherjee',
+    phone: '9831920381',
+    caseNumber: 'MAT/52/2026',
+    courtName: 'District Family Court, Medinipur',
+    appearanceDate: '2026-12-05',
+    purpose: 'Mediation & Conciliation Session for Interim Maintenance',
+    ppName: 'Mediator: Adv. Tapati Sen',
+    otherCaseNumber: 'Section 125 CrPC Petition',
+    createdAt: '2026-10-22T16:30:00.000Z',
+  },
+]
+
+const SEED_PAYMENTS = [
+  {
+    id: 'PM-3001',
+    receiptNumber: 'REC-3001',
+    billId: 'BL-1001',
+    caseId: 'CS-2001',
+    clientId: 'CL-1001',
+    clientName: 'Rajesh Kumar Sharma',
+    caseNumber: 'CR/342/2026',
     tcc: 'TCC-42/26',
     idNumber: 'ID-101',
     paymentDate: '2026-08-14',
@@ -398,9 +613,12 @@ const SEED_PAYMENTS = [
   },
   {
     id: 'PM-3002',
+    receiptNumber: 'REC-3002',
+    billId: 'BL-1001',
     caseId: 'CS-2001',
     clientId: 'CL-1001',
     clientName: 'Rajesh Kumar Sharma',
+    caseNumber: 'CR/342/2026',
     tcc: 'TCC-42/26',
     idNumber: 'ID-101',
     paymentDate: '2026-10-10',
@@ -412,9 +630,12 @@ const SEED_PAYMENTS = [
   },
   {
     id: 'PM-3003',
+    receiptNumber: 'REC-3003',
+    billId: 'BL-1002',
     caseId: 'CS-2002',
     clientId: 'CL-1002',
     clientName: 'Sunita Devi Adhikari',
+    caseNumber: 'TS/108/2026',
     tcc: 'TCC-55/26',
     idNumber: 'ID-102',
     paymentDate: '2026-09-02',
@@ -426,9 +647,12 @@ const SEED_PAYMENTS = [
   },
   {
     id: 'PM-3004',
+    receiptNumber: 'REC-3004',
+    billId: 'BL-1003',
     caseId: 'CS-2003',
     clientId: 'CL-1003',
     clientName: 'Debashis Roy Chowdhury',
+    caseNumber: 'BL/89/2026',
     tcc: 'TCC-67/26',
     idNumber: 'ID-103',
     paymentDate: '2026-09-18',
@@ -440,9 +664,12 @@ const SEED_PAYMENTS = [
   },
   {
     id: 'PM-3005',
+    receiptNumber: 'REC-3005',
+    billId: 'BL-1004',
     caseId: 'CS-2004',
     clientId: 'CL-1001',
     clientName: 'Rajesh Kumar Sharma',
+    caseNumber: 'MISC/44/2026',
     tcc: 'TCC-72/26',
     idNumber: 'ID-104',
     paymentDate: '2026-09-25',
@@ -454,9 +681,12 @@ const SEED_PAYMENTS = [
   },
   {
     id: 'PM-3006',
+    receiptNumber: 'REC-3006',
+    billId: 'BL-1005',
     caseId: 'CS-2005',
     clientId: 'CL-1004',
     clientName: 'Manas Ranjan Giri',
+    caseNumber: 'EX/19/2026',
     tcc: 'TCC-81/26',
     idNumber: 'ID-105',
     paymentDate: '2026-10-05',
@@ -468,9 +698,12 @@ const SEED_PAYMENTS = [
   },
   {
     id: 'PM-3007',
+    receiptNumber: 'REC-3007',
+    billId: 'BL-1006',
     caseId: 'CS-2006',
     clientId: 'CL-1005',
     clientName: 'Priyanka Mukherjee',
+    caseNumber: 'MAT/52/2026',
     tcc: 'TCC-94/26',
     idNumber: 'ID-106',
     paymentDate: '2026-10-22',
@@ -482,9 +715,12 @@ const SEED_PAYMENTS = [
   },
   {
     id: 'PM-3008',
+    receiptNumber: 'REC-3008',
+    billId: 'BL-1001',
     caseId: 'CS-2001',
     clientId: 'CL-1001',
     clientName: 'Rajesh Kumar Sharma',
+    caseNumber: 'CR/342/2026',
     tcc: 'TCC-42/26',
     idNumber: 'ID-101',
     paymentDate: '2026-11-16',
@@ -907,8 +1143,9 @@ export function getClientHistory(clientId) {
   const client = getClientById(clientId)
   const cases = getCases().filter((cs) => String(cs.clientId).toLowerCase() === String(clientId).toLowerCase())
   const caseIds = new Set(cases.map((c) => c.id))
+  const bills = getBills().filter((b) => String(b.clientId).toLowerCase() === String(clientId).toLowerCase() || caseIds.has(b.caseId))
   const payments = getPayments().filter((p) => String(p.clientId).toLowerCase() === String(clientId).toLowerCase() || caseIds.has(p.caseId))
-  const totalFees = cases.reduce((acc, c) => acc + Number(c.totalFees || 0), 0)
+  const totalFees = bills.length > 0 ? bills.reduce((acc, b) => acc + Number(b.totalAmount || 0), 0) : cases.reduce((acc, c) => acc + Number(c.totalFees || 0), 0)
   const totalPaid = payments.reduce((acc, p) => acc + Number(p.amount || 0), 0)
   const totalDue = Math.max(0, totalFees - totalPaid)
   const documents = getDocuments().filter((d) => String(d.associatedId).toLowerCase() === String(clientId).toLowerCase() || caseIds.has(d.associatedId))
@@ -916,6 +1153,7 @@ export function getClientHistory(clientId) {
   return {
     client,
     cases,
+    bills,
     payments,
     documents,
     financials: {
@@ -930,7 +1168,29 @@ export function getClientHistory(clientId) {
 // MODULE 2: CASE MASTER APIS
 // -------------------------------------------------------------
 export function getCases() {
-  return readStorage(CASES_KEY, SEED_CASES)
+  const cases = readStorage(CASES_KEY, SEED_CASES)
+  const clients = readStorage(CLIENTS_KEY, SEED_CLIENTS)
+  // Ensure every case has its authentic Client ID CL-... mapped
+  return cases.map((cs) => {
+    let cid = cs.clientId
+    if (!cid || cid.startsWith('CS-')) {
+      const matched = clients.find(
+        (c) =>
+          (cs.clientName && c.name && c.name.toLowerCase() === cs.clientName.toLowerCase()) ||
+          (cs.phone && c.phone && c.phone === cs.phone)
+      )
+      if (matched) {
+        cid = matched.id
+      }
+    }
+    return {
+      ...cs,
+      clientId: cid || cs.clientId || 'CL-1001',
+      // backward compatibility for Reck vs Reg
+      regNumber: cs.regNumber || cs.reck || '',
+      reck: cs.reck || cs.regNumber || '',
+    }
+  })
 }
 
 export function getCaseById(id) {
@@ -1151,6 +1411,225 @@ export function deletePayment(id) {
   }
 
   return true
+}
+
+// -------------------------------------------------------------
+// MODULE: BILLING & INVOICING APIS (SEPARATE FROM PAYMENTS)
+// -------------------------------------------------------------
+export function getBills() {
+  let bills = readStorage(BILLS_KEY, null)
+  if (!bills || !Array.isArray(bills) || bills.length === 0) {
+    bills = [...SEED_BILLS]
+    writeStorage(BILLS_KEY, bills)
+  }
+
+  // Auto-reconciliation: ensure cases have opening bills
+  const cases = getCases()
+  let hasNew = false
+  cases.forEach((cs) => {
+    const existing = bills.find((b) => b.caseId === cs.id)
+    if (!existing && Number(cs.totalFees || 0) > 0) {
+      let maxNum = 1000
+      bills.forEach((b) => {
+        const m = String(b.id || b.billNumber).match(/\d+/)
+        if (m) {
+          const num = parseInt(m[0], 10)
+          if (num > maxNum) maxNum = num
+        }
+      })
+      const newBill = {
+        id: `BL-${maxNum + 1}`,
+        billNumber: `BILL-${maxNum + 1}`,
+        caseId: cs.id,
+        clientId: cs.clientId,
+        clientName: cs.clientName,
+        phone: cs.phone || '',
+        caseNumber: cs.caseNumber || '',
+        courtName: cs.courtName || '',
+        billDate: cs.createdAt ? cs.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+        description: `Contract bill for ${cs.caseNumber || 'case representation'}`,
+        contractAmount: Number(cs.totalFees || 0),
+        additionalCharges: 0,
+        discount: 0,
+        totalAmount: Number(cs.totalFees || 0),
+        paidAmount: Number(cs.paidAmount || 0),
+        dueAmount: Math.max(0, Number(cs.totalFees || 0) - Number(cs.paidAmount || 0)),
+        remarks: cs.notes || '',
+        createdAt: cs.createdAt || new Date().toISOString(),
+      }
+      bills.push(newBill)
+      hasNew = true
+    }
+  })
+
+  if (hasNew) {
+    writeStorage(BILLS_KEY, bills)
+  }
+
+  return bills
+}
+
+export function getBillById(id) {
+  const bills = getBills()
+  return bills.find((b) => String(b.id).toLowerCase() === String(id).toLowerCase() || String(b.billNumber).toLowerCase() === String(id).toLowerCase()) || null
+}
+
+export function getBillsByClientId(clientId) {
+  const bills = getBills()
+  return bills.filter((b) => String(b.clientId).toLowerCase() === String(clientId).toLowerCase())
+}
+
+export function getBillsByCaseId(caseId) {
+  const bills = getBills()
+  return bills.filter((b) => String(b.caseId).toLowerCase() === String(caseId).toLowerCase())
+}
+
+export function saveBill(billData) {
+  const bills = getBills()
+  let maxNum = 1000
+  bills.forEach((b) => {
+    const match = String(b.id || b.billNumber).match(/\d+/)
+    if (match) {
+      const num = parseInt(match[0], 10)
+      if (num > maxNum) maxNum = num
+    }
+  })
+  const newId = `BL-${maxNum + 1}`
+  const billNumber = billData.billNumber || `BILL-${maxNum + 1}`
+
+  const contractAmount = Number(billData.contractAmount || 0)
+  const additionalCharges = Number(billData.additionalCharges || 0)
+  const discount = Number(billData.discount || 0)
+  const totalAmount = Math.max(0, contractAmount + additionalCharges - discount)
+  const paidAmount = Number(billData.paidAmount || 0)
+  const dueAmount = Math.max(0, totalAmount - paidAmount)
+
+  const newBill = {
+    ...billData,
+    id: newId,
+    billNumber,
+    contractAmount,
+    additionalCharges,
+    discount,
+    totalAmount,
+    paidAmount,
+    dueAmount,
+    billDate: billData.billDate || new Date().toISOString().split('T')[0],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+
+  const updated = [newBill, ...bills]
+  writeStorage(BILLS_KEY, updated)
+  return newBill
+}
+
+export function updateBill(id, billData) {
+  const bills = getBills()
+  const idx = bills.findIndex((b) => String(b.id).toLowerCase() === String(id).toLowerCase() || String(b.billNumber).toLowerCase() === String(id).toLowerCase())
+  if (idx === -1) throw new Error(`Bill ${id} not found`)
+
+  const contractAmount = Number(billData.contractAmount !== undefined ? billData.contractAmount : bills[idx].contractAmount || 0)
+  const additionalCharges = Number(billData.additionalCharges !== undefined ? billData.additionalCharges : bills[idx].additionalCharges || 0)
+  const discount = Number(billData.discount !== undefined ? billData.discount : bills[idx].discount || 0)
+  const totalAmount = Math.max(0, contractAmount + additionalCharges - discount)
+
+  const payments = getPayments().filter((p) => p.billId === bills[idx].id || p.billId === bills[idx].billNumber || (p.caseId && p.caseId === bills[idx].caseId))
+  const paidAmount = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  const dueAmount = Math.max(0, totalAmount - paidAmount)
+
+  bills[idx] = {
+    ...bills[idx],
+    ...billData,
+    id: bills[idx].id,
+    billNumber: bills[idx].billNumber,
+    contractAmount,
+    additionalCharges,
+    discount,
+    totalAmount,
+    paidAmount,
+    dueAmount,
+    updatedAt: new Date().toISOString(),
+  }
+
+  writeStorage(BILLS_KEY, bills)
+  return bills[idx]
+}
+
+export function deleteBill(id) {
+  const bills = getBills()
+  const target = bills.find((b) => String(b.id).toLowerCase() === String(id).toLowerCase() || String(b.billNumber).toLowerCase() === String(id).toLowerCase())
+  if (!target) return false
+
+  const payments = getPayments().filter((p) => p.billId === target.id || p.billId === target.billNumber)
+  if (payments.length > 0) {
+    throw new Error(`Cannot delete Bill ${target.billNumber} because it has ${payments.length} payment receipt(s) recorded against it. Remove payments first.`)
+  }
+
+  const filtered = bills.filter((b) => b.id !== target.id)
+  writeStorage(BILLS_KEY, filtered)
+  return true
+}
+
+export function recalculateBillFinancials(billIdOrCaseId) {
+  const bills = getBills()
+  let changed = false
+  bills.forEach((b) => {
+    if (b.id === billIdOrCaseId || b.billNumber === billIdOrCaseId || b.caseId === billIdOrCaseId) {
+      const payments = getPayments().filter((p) => p.billId === b.id || p.billId === b.billNumber || p.caseId === b.caseId)
+      const paid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+      b.paidAmount = paid
+      b.dueAmount = Math.max(0, Number(b.totalAmount || 0) - paid)
+      b.updatedAt = new Date().toISOString()
+      changed = true
+    }
+  })
+  if (changed) {
+    writeStorage(BILLS_KEY, bills)
+  }
+}
+
+// -------------------------------------------------------------
+// MODULE: APPEARANCE HISTORY APIS
+// -------------------------------------------------------------
+export function getAppearances() {
+  const appearances = readStorage(APPEARANCES_KEY, SEED_APPEARANCES)
+  return appearances.sort((a, b) => (b.appearanceDate || '').localeCompare(a.appearanceDate || ''))
+}
+
+export function saveAppearance(entryData) {
+  const appearances = getAppearances()
+  let maxNum = 1000
+  appearances.forEach((a) => {
+    const match = String(a.id).match(/\d+/)
+    if (match) {
+      const num = parseInt(match[0], 10)
+      if (num > maxNum) maxNum = num
+    }
+  })
+  const newId = `APP-${maxNum + 1}`
+
+  const newEntry = {
+    ...entryData,
+    id: newId,
+    appearanceDate: entryData.appearanceDate || entryData.nextDate || new Date().toISOString().split('T')[0],
+    createdAt: new Date().toISOString(),
+  }
+
+  const updated = [newEntry, ...appearances]
+  writeStorage(APPEARANCES_KEY, updated)
+  return newEntry
+}
+
+export function getAppearancesByDateRange(fromDate, toDate) {
+  const apps = getAppearances()
+  return apps.filter((a) => {
+    const d = a.appearanceDate
+    if (!d) return false
+    if (fromDate && d < fromDate) return false
+    if (toDate && d > toDate) return false
+    return true
+  })
 }
 
 // -------------------------------------------------------------
@@ -1668,7 +2147,9 @@ export function exportDatabaseAsJSON() {
     exportDate: new Date().toISOString(),
     clients: getClients(),
     cases: getCases(),
+    bills: getBills(),
     payments: getPayments(),
+    appearances: getAppearances(),
     expenseHeads: getExpenseHeads(),
     expenses: getExpenses(),
     consultancyFees: getConsultancyFees(),
@@ -1685,7 +2166,9 @@ export function importDatabaseFromJSON(jsonString) {
     const data = JSON.parse(jsonString)
     if (Array.isArray(data.clients)) writeStorage(CLIENTS_KEY, data.clients)
     if (Array.isArray(data.cases)) writeStorage(CASES_KEY, data.cases)
+    if (Array.isArray(data.bills)) writeStorage(BILLS_KEY, data.bills)
     if (Array.isArray(data.payments)) writeStorage(PAYMENTS_KEY, data.payments)
+    if (Array.isArray(data.appearances)) writeStorage(APPEARANCES_KEY, data.appearances)
     if (Array.isArray(data.expenseHeads)) writeStorage(EXPENSE_HEADS_KEY, data.expenseHeads)
     if (Array.isArray(data.expenses)) writeStorage(EXPENSES_KEY, data.expenses)
     if (Array.isArray(data.consultancyFees)) writeStorage(CONSULTANCY_KEY, data.consultancyFees)

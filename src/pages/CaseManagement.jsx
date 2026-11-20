@@ -19,6 +19,8 @@ export default function CaseManagement() {
   const [cases, setCases] = useState(() => getCases())
   const [selectedCaseId, setSelectedCaseId] = useState(null)
   const [search, setSearch] = useState('')
+  const [clientSearchQuery, setClientSearchQuery] = useState('')
+  const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [toast, setToast] = useState(null)
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -360,7 +362,7 @@ export default function CaseManagement() {
               </div>
 
               <form className="mgmt-form" onSubmit={(e) => e.preventDefault()}>
-                {/* Row 1: Case ID & Client Selection */}
+                {/* Row 1: Case ID & Searchable Client Selection */}
                 <div className="form-row-2">
                   <div className="form-field">
                     <label className="field-lbl">Case ID (Auto Unique)</label>
@@ -371,25 +373,132 @@ export default function CaseManagement() {
                       readOnly
                     />
                   </div>
-                  <div className="form-field">
-                    <label className="field-lbl">Select Registered Client <span className="req">*</span></label>
-                    <div className="input-with-icon">
-                      <User size={14} className="input-ic" />
-                      <select
-                        name="clientId"
-                        className={`form-input form-select ${errors.clientId ? 'input-err' : ''}`}
-                        value={formData.clientId}
-                        onChange={handleClientSelectChange}
-                      >
-                        <option value="">-- Choose Registered Client --</option>
-                        {clients.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.id} — {c.name} {c.phone ? `(${c.phone})` : ''}
-                          </option>
-                        ))}
-                      </select>
+                  <div className="form-field" style={{ position: 'relative' }}>
+                    <label className="field-lbl">
+                      Select Registered Client <span className="req">*</span>
+                      {formData.clientId && (
+                        <span style={{ marginLeft: '6px', color: '#1d4ed8', fontWeight: '700' }}>
+                          ({formData.clientId})
+                        </span>
+                      )}
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <User size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                      <input
+                        type="text"
+                        placeholder="Search Client ID (e.g. CL-1001) or Name..."
+                        value={clientSearchQuery || (formData.clientId ? `${formData.clientId} — ${formData.clientName}` : '')}
+                        onChange={(e) => {
+                          setClientSearchQuery(e.target.value)
+                          setShowClientDropdown(true)
+                        }}
+                        onFocus={() => setShowClientDropdown(true)}
+                        className={`form-input ${errors.clientId ? 'input-err' : ''}`}
+                        style={{ paddingLeft: '32px', paddingRight: '28px' }}
+                      />
+                      {(clientSearchQuery || formData.clientId) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              clientId: '',
+                              clientName: '',
+                              phone: '',
+                            }))
+                            setClientSearchQuery('')
+                            setShowClientDropdown(false)
+                          }}
+                          style={{
+                            position: 'absolute',
+                            right: '8px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#94a3b8',
+                            fontSize: '14px',
+                          }}
+                          title="Clear selected client"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
                     {errors.clientId && <span className="err-msg">{errors.clientId}</span>}
+
+                    {/* Search Results Dropdown */}
+                    {showClientDropdown && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          right: 0,
+                          top: '100%',
+                          zIndex: 40,
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                          maxHeight: '220px',
+                          overflowY: 'auto',
+                          marginTop: '4px',
+                        }}
+                      >
+                        {clients.filter((c) => {
+                          const q = (clientSearchQuery || '').toLowerCase()
+                          return !q || c.id.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q))
+                        }).length === 0 ? (
+                          <div style={{ padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>
+                            No registered client found for "{clientSearchQuery}".
+                          </div>
+                        ) : (
+                          clients
+                            .filter((c) => {
+                              const q = (clientSearchQuery || '').toLowerCase()
+                              return !q || c.id.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q))
+                            })
+                            .map((c) => (
+                              <div
+                                key={c.id}
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    clientId: c.id,
+                                    clientName: c.name,
+                                    phone: c.phone || '',
+                                    totalFees: prev.totalFees || c.fees || '',
+                                  }))
+                                  if (errors.clientId) {
+                                    setErrors((prev) => ({ ...prev, clientId: null }))
+                                  }
+                                  setClientSearchQuery('')
+                                  setShowClientDropdown(false)
+                                }}
+                                style={{
+                                  padding: '8px 12px',
+                                  borderBottom: '1px solid #f1f5f9',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  fontSize: '12px',
+                                  background: formData.clientId === c.id ? '#eff6ff' : '#ffffff',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = formData.clientId === c.id ? '#eff6ff' : '#ffffff')}
+                              >
+                                <div>
+                                  <strong style={{ color: '#0f172a' }}>{c.name}</strong>
+                                  <div style={{ color: '#64748b', fontSize: '11px' }}>{c.phone || 'No mobile'}</div>
+                                </div>
+                                <span className="id-pill" style={{ background: '#eff6ff', color: '#1d4ed8' }}>{c.id}</span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -536,20 +645,20 @@ export default function CaseManagement() {
                   </div>
                 </div>
 
-                {/* Row 7: Total Case Contract (TCC) - ID Number removed */}
+                {/* Row 7: Contract */}
                 <div className="form-field">
-                  <label className="field-lbl">Total Case Contract</label>
+                  <label className="field-lbl">Contract</label>
                   <input
                     type="text"
                     name="tcc"
-                    placeholder="e.g. Total Case Contract reference, TCC-42/26"
+                    placeholder="Enter Contract reference or terms"
                     className="form-input"
                     value={formData.tcc}
                     onChange={handleChange}
                   />
                 </div>
 
-                {/* Row 8: Brief for Room & Reg Number */}
+                {/* Row 8: Brief for Room & Reck */}
                 <div className="form-row-2">
                   <div className="form-field">
                     <label className="field-lbl">Brief for Room</label>
@@ -564,11 +673,11 @@ export default function CaseManagement() {
                   </div>
 
                   <div className="form-field">
-                    <label className="field-lbl">Reg Number</label>
+                    <label className="field-lbl">Reck</label>
                     <input
                       type="text"
                       name="regNumber"
-                      placeholder="Enter Reg Number"
+                      placeholder="Enter Reck"
                       className="form-input"
                       value={formData.regNumber}
                       onChange={handleChange}
@@ -721,9 +830,10 @@ export default function CaseManagement() {
                   <thead>
                     <tr>
                       <th style={{ width: '80px' }}>CASE ID</th>
+                      <th style={{ width: '85px' }}>CLIENT ID</th>
                       <th>CASE NUMBER &amp; COURT</th>
                       <th>CLIENT NAME</th>
-                      <th style={{ width: '120px' }}>TOTAL CASE CONTRACT</th>
+                      <th style={{ width: '110px' }}>CONTRACT</th>
                       <th style={{ width: '100px' }}>APPEARANCE DATE</th>
                       <th style={{ width: '80px' }}>DUE (₹)</th>
                       <th style={{ width: '75px' }}>ACTIONS</th>
@@ -732,7 +842,7 @@ export default function CaseManagement() {
                   <tbody>
                     {filteredCases.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="empty-table-cell">
+                        <td colSpan={8} className="empty-table-cell">
                           <AlertCircle size={18} className="empty-ic" />
                           <span>No case records match your search criteria.</span>
                         </td>
@@ -751,6 +861,9 @@ export default function CaseManagement() {
                               <span className="id-pill case-id">{cs.id}</span>
                             </td>
                             <td>
+                              <span className="id-pill" style={{ background: '#eff6ff', color: '#1d4ed8' }}>{cs.clientId}</span>
+                            </td>
+                            <td>
                               <div className="case-no-cell">
                                 <strong className="primary-text">{cs.caseNumber}</strong>
                                 <small className="muted-subtext">{cs.courtName}</small>
@@ -762,13 +875,12 @@ export default function CaseManagement() {
                             <td>
                               <div className="client-link-cell">
                                 <span className="cell-client">{cs.clientName}</span>
-                                <small className="cell-cid">{cs.clientId}</small>
                               </div>
                             </td>
                             <td>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '11px', fontWeight: '600', color: '#0f172a' }}>{cs.tcc || '—'}</span>
-                                {cs.regNumber && <small style={{ fontSize: '10px', color: '#64748b' }}>Reg: {cs.regNumber}</small>}
+                                {cs.regNumber && <small style={{ fontSize: '10px', color: '#64748b' }}>Reck: {cs.regNumber}</small>}
                                 {cs.briefForRoom && <small style={{ fontSize: '10px', color: '#64748b' }}>Room: {cs.briefForRoom}</small>}
                               </div>
                             </td>
@@ -847,9 +959,9 @@ export default function CaseManagement() {
                   </div>
                   <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                     <div><b>V.S. Name:</b> {viewModalCase.vsName || '—'}</div>
-                    <div><b>Total Case Contract:</b> {viewModalCase.tcc || '—'}</div>
+                    <div><b>Contract:</b> {viewModalCase.tcc || '—'}</div>
                     <div><b>Brief for Room:</b> {viewModalCase.briefForRoom || '—'}</div>
-                    <div><b>Reg Number:</b> {viewModalCase.regNumber || '—'}</div>
+                    <div><b>Reck:</b> {viewModalCase.regNumber || '—'}</div>
                     <div><b>Appearance Date:</b> <span style={{ color: '#7c3aed', fontWeight: '700' }}>{viewModalCase.nextDate}</span></div>
                     <div><b>Purpose:</b> {viewModalCase.purpose || '—'}</div>
                   </div>
@@ -962,9 +1074,11 @@ export default function CaseManagement() {
                 </div>
                 <div className="print-meta">
                   <div><b>Case ID:</b> {selectedCase.id}</div>
+                  <div><b>Client ID:</b> {selectedCase.clientId}</div>
                   <div><b>Case Number:</b> {selectedCase.caseNumber}</div>
-                  <div><b>T.C.C:</b> {selectedCase.tcc || '—'}</div>
-                  <div><b>ID No:</b> {selectedCase.idNumber || '—'}</div>
+                  <div><b>Contract:</b> {selectedCase.tcc || '—'}</div>
+                  {selectedCase.regNumber && <div><b>Reck:</b> {selectedCase.regNumber}</div>}
+                  {selectedCase.briefForRoom && <div><b>Brief for Room:</b> {selectedCase.briefForRoom}</div>}
                 </div>
               </div>
 

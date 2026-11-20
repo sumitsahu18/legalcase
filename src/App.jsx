@@ -47,8 +47,10 @@ export default function App() {
       {/* Module 3: Case Search & Reports */}
       <Route path="/case-search" element={<Protected><CaseSearchReports /></Protected>} />
 
-      {/* Module 4: Payment Management */}
-      <Route path="/payments" element={<Protected><PaymentManagement initialTab="entry" /></Protected>} />
+      {/* Module 4: Payment Management & Client Billing */}
+      <Route path="/payments" element={<Protected><PaymentManagement initialTab="billing" /></Protected>} />
+      <Route path="/client-billing" element={<Protected><PaymentManagement initialTab="billing" /></Protected>} />
+      <Route path="/client-payment" element={<Protected><PaymentManagement initialTab="payments" /></Protected>} />
       <Route path="/date-wise-payments" element={<Protected><PaymentManagement initialTab="date-wise" /></Protected>} />
 
       {/* Module 5: Due List */}
@@ -86,8 +88,11 @@ export default function App() {
       {/* Supporting Operations & Reports */}
       <Route path="/waiting-list" element={<Protected><WaitingList /></Protected>} />
       <Route path="/client-ledger" element={<Protected><ClientLedgerReport /></Protected>} />
+      <Route path="/client-ledger-report" element={<Protected><ClientLedgerReport /></Protected>} />
       <Route path="/income-expense" element={<Protected><IncomeExpenseReport /></Protected>} />
+      <Route path="/income-expense-report" element={<Protected><IncomeExpenseReport /></Protected>} />
       <Route path="/for-wise-case" element={<Protected><ForWiseCaseReport /></Protected>} />
+      <Route path="/for-wise-case-report" element={<Protected><ForWiseCaseReport /></Protected>} />
       <Route path="/welcome-screen" element={<Protected><WelcomeScreen /></Protected>} />
 
       {/* Generic Dynamic Module Route */}

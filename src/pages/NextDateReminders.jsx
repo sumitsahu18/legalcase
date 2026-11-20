@@ -10,7 +10,7 @@ import Topbar from '../components/Topbar.jsx'
 import { OFFICE } from '../data/menu.js'
 import {
   getCases, getClients, saveCase, updateCase,
-  getReminders, onStorageUpdate
+  getReminders, saveAppearance, onStorageUpdate
 } from '../services/storageService.js'
 import './management.css'
 
@@ -30,7 +30,10 @@ export default function NextDateReminders() {
 
   // ---------------- Section 4: + New Entry Modal States ----------------
   const [showNewEntryModal, setShowNewEntryModal] = useState(false)
+  const [newEntrySearchQuery, setNewEntrySearchQuery] = useState('')
+  const [showCaseSelectorDropdown, setShowCaseSelectorDropdown] = useState(false)
   const initialNewEntryForm = {
+    caseId: '',
     clientId: '',
     clientName: '',
     phone: '',
@@ -43,8 +46,6 @@ export default function NextDateReminders() {
     ppName: '',
     lc: '',
     tcc: '',
-    briefForRoom: '',
-    regNumber: '',
     notes: '',
   }
   const [newEntryForm, setNewEntryForm] = useState(initialNewEntryForm)
@@ -243,24 +244,27 @@ export default function NextDateReminders() {
   }
 
   // ---------------- Section 4: + New Entry Form Handlers ----------------
-  const handleClientSelectForNewEntry = (e) => {
-    const cid = e.target.value
-    if (!cid) {
-      setNewEntryForm((prev) => ({ ...prev, clientId: '', clientName: '', phone: '' }))
-      return
-    }
-    const c = clients.find((x) => x.id === cid)
-    if (c) {
-      setNewEntryForm((prev) => ({
-        ...prev,
-        clientId: c.id,
-        clientName: c.name,
-        phone: c.phone || '',
-      }))
-      if (newEntryErrors.clientName) {
-        setNewEntryErrors((prev) => ({ ...prev, clientName: null }))
-      }
-    }
+  const handleSelectCaseForNewEntry = (cs) => {
+    setNewEntryForm({
+      caseId: cs.id,
+      clientId: cs.clientId || 'CL-1001',
+      clientName: cs.clientName || '',
+      phone: cs.phone || '',
+      caseNumber: cs.caseNumber || '',
+      psCaseNumber: cs.psCaseNumber || cs.otherCaseNumber || '',
+      courtName: cs.courtName || '',
+      underSection: cs.underSection || '',
+      nextDate: cs.nextDate || new Date().toISOString().split('T')[0],
+      purpose: cs.purpose || 'Court appearance',
+      ppName: cs.ppName || '',
+      lc: cs.lc || '',
+      tcc: cs.tcc || '',
+      notes: cs.notes || '',
+    })
+    setNewEntryErrors({})
+    setNewEntrySearchQuery('')
+    setShowCaseSelectorDropdown(false)
+    showToast('info', `Populated details from Case ${cs.caseNumber} (${cs.clientName})`)
   }
 
   const handleSaveNewEntry = (e) => {
@@ -278,17 +282,62 @@ export default function NextDateReminders() {
     }
 
     try {
-      const saved = saveCase({
-        ...newEntryForm,
-        caseDetails: newEntryForm.notes || '',
+      let targetCase = newEntryForm.caseId ? cases.find((c) => c.id === newEntryForm.caseId) : null
+      if (!targetCase) {
+        targetCase = cases.find((c) => c.caseNumber && c.caseNumber.trim().toLowerCase() === newEntryForm.caseNumber.trim().toLowerCase())
+      }
+
+      let finalCaseId = targetCase ? targetCase.id : null
+      let finalClientId = targetCase ? targetCase.clientId : (newEntryForm.clientId || 'CL-1001')
+
+      if (targetCase) {
+        // Update existing case - preserve history, do not duplicate
+        updateCase(targetCase.id, {
+          clientName: newEntryForm.clientName,
+          phone: newEntryForm.phone,
+          caseNumber: newEntryForm.caseNumber,
+          courtName: newEntryForm.courtName,
+          nextDate: newEntryForm.nextDate,
+          purpose: newEntryForm.purpose || targetCase.purpose || 'Court appearance',
+          psCaseNumber: newEntryForm.psCaseNumber,
+          ppName: newEntryForm.ppName,
+          notes: newEntryForm.notes,
+        })
+        finalCaseId = targetCase.id
+        finalClientId = targetCase.clientId
+      } else {
+        const saved = saveCase({
+          ...newEntryForm,
+          clientId: finalClientId,
+          caseDetails: newEntryForm.notes || '',
+        })
+        finalCaseId = saved.id
+        finalClientId = saved.clientId
+      }
+
+      // Record separate appearance history entry for date-wise searching
+      saveAppearance({
+        caseId: finalCaseId,
+        clientId: finalClientId,
+        clientName: newEntryForm.clientName,
+        phone: newEntryForm.phone,
+        caseNumber: newEntryForm.caseNumber,
+        courtName: newEntryForm.courtName,
+        appearanceDate: newEntryForm.nextDate,
+        purpose: newEntryForm.purpose || 'Court appearance',
+        ppName: newEntryForm.ppName || '',
+        otherCaseNumber: newEntryForm.psCaseNumber || '',
+        notes: newEntryForm.notes || '',
       })
+
       setCases(getCases())
-      showToast('success', `Case ${saved.caseNumber} registered with Appearance Date ${saved.nextDate}!`)
+      showToast('success', `Saved appearance entry for Case ${newEntryForm.caseNumber} on ${newEntryForm.nextDate}!`)
       setShowNewEntryModal(false)
       setNewEntryForm(initialNewEntryForm)
       setNewEntryErrors({})
+      setNewEntrySearchQuery('')
     } catch (err) {
-      showToast('error', err.message || 'Failed to create new case entry.')
+      showToast('error', err.message || 'Failed to save case entry.')
     }
   }
 
@@ -1005,156 +1054,278 @@ export default function NextDateReminders() {
                   <button className="clear-search-btn" onClick={() => setShowNewEntryModal(false)}>✕</button>
                 </div>
 
-                <form onSubmit={handleSaveNewEntry} style={{ marginTop: '14px' }}>
-                  {/* Select Registered Client */}
-                  <div className="form-field" style={{ marginBottom: '10px' }}>
-                    <label className="field-lbl">Autofill from Registered Client (Optional)</label>
-                    <select
-                      className="form-input form-select"
-                      value={newEntryForm.clientId}
-                      onChange={handleClientSelectForNewEntry}
+                {/* Searchable Case / Client Dropdown */}
+                <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px', position: 'relative' }}>
+                  <label className="field-lbl" style={{ marginBottom: '6px', fontWeight: '700', color: '#1e293b' }}>
+                    Select Case / Client to Schedule Appearance
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input
+                      type="text"
+                      placeholder="Search by Client Name, Client ID (e.g. CL-1001), Case Number, or Court..."
+                      value={newEntrySearchQuery || (newEntryForm.caseNumber ? `${newEntryForm.caseNumber} — ${newEntryForm.clientName} (${newEntryForm.clientId || 'Client'})` : '')}
+                      onChange={(e) => {
+                        setNewEntrySearchQuery(e.target.value)
+                        setShowCaseSelectorDropdown(true)
+                      }}
+                      onFocus={() => setShowCaseSelectorDropdown(true)}
+                      className="form-input"
+                      style={{ paddingLeft: '32px', paddingRight: '28px', fontSize: '12px' }}
+                    />
+                    {(newEntrySearchQuery || newEntryForm.caseNumber) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewEntrySearchQuery('')
+                          setShowCaseSelectorDropdown(false)
+                          setNewEntryForm(initialNewEntryForm)
+                        }}
+                        style={{
+                          position: 'absolute',
+                          right: '8px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#94a3b8',
+                          fontSize: '14px',
+                        }}
+                        title="Clear selection"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Options */}
+                  {showCaseSelectorDropdown && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: '14px',
+                        right: '14px',
+                        top: '100%',
+                        zIndex: 40,
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                        maxHeight: '220px',
+                        overflowY: 'auto',
+                        marginTop: '4px',
+                      }}
                     >
-                      <option value="">-- Choose Registered Client or enter manually below --</option>
-                      {clients.map((c) => (
-                        <option key={c.id} value={c.id}>{c.id} — {c.name} ({c.phone})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-row-2" style={{ marginBottom: '10px' }}>
-                    <div className="form-field">
-                      <label className="field-lbl">Client Full Name <span className="req">*</span></label>
-                      <input
-                        type="text"
-                        className={`form-input ${newEntryErrors.clientName ? 'input-err' : ''}`}
-                        placeholder="Client legal name"
-                        value={newEntryForm.clientName}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, clientName: e.target.value }))}
-                        required
-                      />
-                      {newEntryErrors.clientName && <span className="err-msg">{newEntryErrors.clientName}</span>}
+                      {cases.filter((cs) => {
+                        const q = (newEntrySearchQuery || '').toLowerCase()
+                        return (
+                          !q ||
+                          cs.clientName?.toLowerCase().includes(q) ||
+                          cs.clientId?.toLowerCase().includes(q) ||
+                          cs.caseNumber?.toLowerCase().includes(q) ||
+                          cs.courtName?.toLowerCase().includes(q)
+                        )
+                      }).length === 0 ? (
+                        <div style={{ padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>
+                          No matching case or client found for "{newEntrySearchQuery}". You can enter details manually below.
+                        </div>
+                      ) : (
+                        cases
+                          .filter((cs) => {
+                            const q = (newEntrySearchQuery || '').toLowerCase()
+                            return (
+                              !q ||
+                              cs.clientName?.toLowerCase().includes(q) ||
+                              cs.clientId?.toLowerCase().includes(q) ||
+                              cs.caseNumber?.toLowerCase().includes(q) ||
+                              cs.courtName?.toLowerCase().includes(q)
+                            )
+                          })
+                          .map((cs) => (
+                            <div
+                              key={cs.id}
+                              onClick={() => handleSelectCaseForNewEntry(cs)}
+                              style={{
+                                padding: '9px 12px',
+                                borderBottom: '1px solid #f1f5f9',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '12px',
+                                background: newEntryForm.caseId === cs.id ? '#eff6ff' : '#ffffff',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = newEntryForm.caseId === cs.id ? '#eff6ff' : '#ffffff')}
+                            >
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <strong style={{ color: '#0f172a' }}>{cs.caseNumber}</strong>
+                                  <span className="id-pill" style={{ fontSize: '10px', background: '#eff6ff', color: '#1d4ed8' }}>{cs.clientId}</span>
+                                </div>
+                                <div style={{ color: '#475569', fontSize: '11px', marginTop: '2px' }}>
+                                  {cs.clientName} · {cs.courtName}
+                                </div>
+                                {cs.purpose && (
+                                  <div style={{ color: '#7c3aed', fontSize: '11px', fontWeight: '500' }}>
+                                    Current Purpose: {cs.purpose}
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <span className="cell-date">{cs.nextDate || 'No date'}</span>
+                              </div>
+                            </div>
+                          ))
+                      )}
                     </div>
+                  )}
+                </div>
 
-                    <div className="form-field">
-                      <label className="field-lbl">Client Mobile Number</label>
-                      <input
-                        type="tel"
-                        className="form-input"
-                        placeholder="10-digit phone"
-                        maxLength={10}
-                        value={newEntryForm.phone}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, phone: e.target.value }))}
-                      />
+                <form onSubmit={handleSaveNewEntry}>
+                  {/* Section 1: Client Information */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b', marginBottom: '8px' }}>
+                      Client Information
                     </div>
-                  </div>
+                    <div className="form-row-2">
+                      <div className="form-field">
+                        <label className="field-lbl">Client Full Name <span className="req">*</span></label>
+                        <input
+                          type="text"
+                          className={`form-input ${newEntryErrors.clientName ? 'input-err' : ''}`}
+                          placeholder="Client legal name"
+                          value={newEntryForm.clientName}
+                          onChange={(e) => setNewEntryForm((p) => ({ ...p, clientName: e.target.value }))}
+                          required
+                        />
+                        {newEntryErrors.clientName && <span className="err-msg">{newEntryErrors.clientName}</span>}
+                      </div>
 
-                  <div className="form-row-2" style={{ marginBottom: '10px' }}>
-                    <div className="form-field">
-                      <label className="field-lbl">Case Number <span className="req">*</span></label>
-                      <input
-                        type="text"
-                        className={`form-input ${newEntryErrors.caseNumber ? 'input-err' : ''}`}
-                        placeholder="e.g. CR/342/2026 or TS/108/2026"
-                        value={newEntryForm.caseNumber}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, caseNumber: e.target.value }))}
-                        required
-                      />
-                      {newEntryErrors.caseNumber && <span className="err-msg">{newEntryErrors.caseNumber}</span>}
-                    </div>
-
-                    <div className="form-field">
-                      <label className="field-lbl">Court Name <span className="req">*</span></label>
-                      <input
-                        type="text"
-                        className={`form-input ${newEntryErrors.courtName ? 'input-err' : ''}`}
-                        placeholder="e.g. ACJM Court, Contai"
-                        value={newEntryForm.courtName}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, courtName: e.target.value }))}
-                        required
-                      />
-                      {newEntryErrors.courtName && <span className="err-msg">{newEntryErrors.courtName}</span>}
-                    </div>
-                  </div>
-
-                  <div className="form-row-2" style={{ marginBottom: '10px' }}>
-                    <div className="form-field">
-                      <label className="field-lbl">Appearance Date <span className="req">*</span></label>
-                      <input
-                        type="date"
-                        className={`form-input ${newEntryErrors.nextDate ? 'input-err' : ''}`}
-                        value={newEntryForm.nextDate}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, nextDate: e.target.value }))}
-                        required
-                      />
-                      {newEntryErrors.nextDate && <span className="err-msg">{newEntryErrors.nextDate}</span>}
-                    </div>
-
-                    <div className="form-field">
-                      <label className="field-lbl">For / Purpose of Hearing</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="e.g. Evidence, Hearing, Framing Charge..."
-                        value={newEntryForm.purpose}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, purpose: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row-2" style={{ marginBottom: '10px' }}>
-                    <div className="form-field">
-                      <label className="field-lbl">P.S. Case Number</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="e.g. Ramnagar PS Case No. 84/2025"
-                        value={newEntryForm.psCaseNumber}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, psCaseNumber: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="form-field">
-                      <label className="field-lbl">PP Name (Public Prosecutor)</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="e.g. Mr. S. K. Bera (APP)"
-                        value={newEntryForm.ppName}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, ppName: e.target.value }))}
-                      />
+                      <div className="form-field">
+                        <label className="field-lbl">Client Mobile Number</label>
+                        <div className="input-with-icon">
+                          <Phone size={14} className="input-ic" />
+                          <input
+                            type="tel"
+                            className="form-input"
+                            placeholder="10-digit mobile number"
+                            maxLength={10}
+                            value={newEntryForm.phone}
+                            onChange={(e) => setNewEntryForm((p) => ({ ...p, phone: e.target.value }))}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="form-row-2" style={{ marginBottom: '10px' }}>
-                    <div className="form-field">
-                      <label className="field-lbl">Brief for Room</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Brief for Room"
-                        value={newEntryForm.briefForRoom}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, briefForRoom: e.target.value }))}
-                      />
+                  {/* Section 2: Court & Case Information */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b', marginBottom: '8px' }}>
+                      Court &amp; Case Information
+                    </div>
+                    <div className="form-row-2">
+                      <div className="form-field">
+                        <label className="field-lbl">Case Number <span className="req">*</span></label>
+                        <div className="input-with-icon">
+                          <Hash size={14} className="input-ic" />
+                          <input
+                            type="text"
+                            className={`form-input ${newEntryErrors.caseNumber ? 'input-err' : ''}`}
+                            placeholder="e.g. CR/342/2026 or TS/108/2026"
+                            value={newEntryForm.caseNumber}
+                            onChange={(e) => setNewEntryForm((p) => ({ ...p, caseNumber: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        {newEntryErrors.caseNumber && <span className="err-msg">{newEntryErrors.caseNumber}</span>}
+                      </div>
+
+                      <div className="form-field">
+                        <label className="field-lbl">Court Name <span className="req">*</span></label>
+                        <div className="input-with-icon">
+                          <Building2 size={14} className="input-ic" />
+                          <input
+                            type="text"
+                            className={`form-input ${newEntryErrors.courtName ? 'input-err' : ''}`}
+                            placeholder="e.g. ACJM Court, Contai"
+                            value={newEntryForm.courtName}
+                            onChange={(e) => setNewEntryForm((p) => ({ ...p, courtName: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        {newEntryErrors.courtName && <span className="err-msg">{newEntryErrors.courtName}</span>}
+                      </div>
                     </div>
 
-                    <div className="form-field">
-                      <label className="field-lbl">Reg Number</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Reg Number"
-                        value={newEntryForm.regNumber}
-                        onChange={(e) => setNewEntryForm((p) => ({ ...p, regNumber: e.target.value }))}
-                      />
+                    <div className="form-row-2" style={{ marginTop: '8px' }}>
+                      <div className="form-field">
+                        <label className="field-lbl">P.S. Case Number</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Ramnagar PS Case No. 84/2025"
+                          value={newEntryForm.psCaseNumber}
+                          onChange={(e) => setNewEntryForm((p) => ({ ...p, psCaseNumber: e.target.value }))}
+                        />
+                      </div>
+
+                      <div className="form-field">
+                        <label className="field-lbl">PP Name (Public Prosecutor)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Mr. S. K. Bera (APP)"
+                          value={newEntryForm.ppName}
+                          onChange={(e) => setNewEntryForm((p) => ({ ...p, ppName: e.target.value }))}
+                        />
+                      </div>
                     </div>
                   </div>
 
+                  {/* Section 3: Appearance Schedule & Hearing Purpose */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b', marginBottom: '8px' }}>
+                      Appearance Schedule
+                    </div>
+                    <div className="form-row-2">
+                      <div className="form-field">
+                        <label className="field-lbl">Appearance Date <span className="req">*</span></label>
+                        <div className="input-with-icon">
+                          <Calendar size={14} className="input-ic" />
+                          <input
+                            type="date"
+                            className={`form-input ${newEntryErrors.nextDate ? 'input-err' : ''}`}
+                            value={newEntryForm.nextDate}
+                            onChange={(e) => setNewEntryForm((p) => ({ ...p, nextDate: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        {newEntryErrors.nextDate && <span className="err-msg">{newEntryErrors.nextDate}</span>}
+                      </div>
+
+                      <div className="form-field">
+                        <label className="field-lbl">For / Purpose of Hearing <span className="req">*</span></label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Evidence / Cross Examination of PW-3"
+                          value={newEntryForm.purpose}
+                          onChange={(e) => setNewEntryForm((p) => ({ ...p, purpose: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 4: Remarks & Notes */}
                   <div className="form-field" style={{ marginBottom: '16px' }}>
-                    <label className="field-lbl">Remarks</label>
+                    <label className="field-lbl">Hearing Notes &amp; Remarks</label>
                     <textarea
                       rows={2}
                       className="form-input form-textarea"
-                      placeholder="Remarks, custody notes, or hearing instructions..."
+                      placeholder="Enter hearing instructions, witness summons or brief notes..."
                       value={newEntryForm.notes}
                       onChange={(e) => setNewEntryForm((p) => ({ ...p, notes: e.target.value }))}
                     />
